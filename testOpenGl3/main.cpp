@@ -5,13 +5,16 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 
 
-float vertices[] = {  0.0f,  0.5f,
+
+float vertices[6] = { 0.0f,  0.5f,
                       0.5f, -0.5f,
-                     -0.5f, -0.5f  };
+                     -0.5f, -0.5f };
 
 GLuint vbo, vao;
 GLuint prog;
@@ -81,13 +84,10 @@ void init_shaders(void)
 
    prog = glCreateProgram();
 
-   glBindAttribLocation(prog, 0, "in_coords");
-
    glAttachShader(prog, vs);
    glAttachShader(prog, fs);
 
    glLinkProgram(prog);
-   glUseProgram(prog);
 }
 
 int main()
@@ -110,6 +110,7 @@ int main()
     glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
     glfwWindowHint( GLFW_VISIBLE, GL_TRUE );
 
+    /* Create Window */
     GLFWwindow* window;
     window = glfwCreateWindow( 500, 500, "First GLFW", NULL, NULL );
     if( window == NULL )
@@ -127,25 +128,42 @@ int main()
         return EXIT_FAILURE;
     }
 
-    glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    /* start shading */
 
     init_shaders();
+    GLint uniformMat = glGetUniformLocation( prog, "trans" );
 
     glGenVertexArrays( 1, &vao );
-    glGenBuffers( 1, &vbo );
+    glBindVertexArray( vao );
 
+    glGenBuffers( 1, &vbo );
     glBindBuffer( GL_ARRAY_BUFFER, vbo );
     glBufferData( GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW );
-    GLint posAttrib = glGetAttribLocation( prog, "in_coords" );
 
-    printf( "in_coords : %d\n", posAttrib );
+    GLuint vertexAttrib = glGetAttribLocation( prog, "in_coords");
+    printf("in_coords : %d\n", vertexAttrib );
+
+    glm::mat4 trans;
+    trans = glm::translate( trans, glm::vec3( 0.5f, 0.5f, 0.5f ));
+    //trans = glm::scale( trans, glm::vec3( 0.5f, 0.5f, 0.5f ));
+    //trans = glm::rotate(trans, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    glm::vec4 result = trans * glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    printf("%f, %f, %f\n", result.x, result.y, result.z);
+
 
     glfwSetInputMode( window, GLFW_STICKY_KEYS, GL_TRUE );
     while ( !glfwWindowShouldClose( window ))
     {
-        glBindVertexArray( vao );
-        glVertexAttribPointer( posAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0 );
-        glEnableVertexAttribArray( posAttrib );
+        glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
+        glClear( GL_COLOR_BUFFER_BIT );
+
+        glUseProgram(prog);
+        glUniformMatrix4fv( uniformMat, 1, GL_FALSE, glm::value_ptr( trans ));
+
+        glVertexAttribPointer( vertexAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0 );
+        glEnableVertexAttribArray( vertexAttrib );
 
         glDrawArrays( GL_TRIANGLES, 0, 3 );
 
@@ -157,8 +175,8 @@ int main()
             glfwSetWindowShouldClose( window, GL_TRUE );
 
     // Cleanup VBO
-    glDeleteBuffers(1, &vbo);
-    glDeleteVertexArrays(1, &vao);
+    glDeleteBuffers( 1, &vbo);
+    glDeleteVertexArrays( 1, &vao );
     glDeleteProgram(prog);
 
     // Close OpenGL window and terminate GLFW
