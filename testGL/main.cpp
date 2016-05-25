@@ -8,7 +8,7 @@
 
 void initGL( void );
 void display( void );
-void Timer(int value);
+void reshape( int w, int h );
 
 UtilityGL* glObject;
 float phaseShift = 0.f;
@@ -16,15 +16,15 @@ float phaseShift = 0.f;
 int main(int argc, char** argv)
 {
     glObject = new UtilityGL();
-    int mode = GLUT_RGB | GLUT_DOUBLE;
+    int mode = GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH;
     glutInitDisplayMode(mode);
     glutInit(&argc, argv);
     glutInitWindowSize(WIDTH, HEIGHT);
     glutCreateWindow("test sin");
     initGL();
     glutDisplayFunc(display);
-
-    Timer(0);
+    glutIdleFunc(display);
+    //glutReshapeFunc(reshape);
     glutMainLoop();
 
     return EXIT_SUCCESS;
@@ -36,13 +36,6 @@ void initGL()
     glClearDepth(1.0);
 }
 
-void Timer(int value)
-{
-    phaseShift += 0.6f;
-    glutPostRedisplay();
-    glutTimerFunc(100, Timer, 0);
-}
-
 void display()
 {
     glClear(GL_COLOR_BUFFER_BIT);
@@ -51,5 +44,16 @@ void display()
         glObject->drawSinDemo( phaseShift );
     glEnd();
 
+    phaseShift += 0.003;
     glutSwapBuffers();
+}
+
+void reshape(int w, int h)
+{
+    glLoadIdentity();
+    float ratio = w / h;
+    glViewport(0, 0, w, h);
+    glMatrixMode(GL_PROJECTION);
+    gluPerspective(45.f, ratio, 0.f, 100.f);
+    glMatrixMode(GL_MODELVIEW);
 }
