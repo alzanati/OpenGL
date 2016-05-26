@@ -37,7 +37,8 @@ void reshape(int w, int h)
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
 
-  gluPerspective(45.f, aspect, 0.1, 100.f);
+  // glOrtho(-3.f, 3.f, -3.f, 3.f, -10.f, 10.f);
+  gluPerspective(45.f, aspect, 1.f, 100.f);
 }
 
 void Timer(int value)
