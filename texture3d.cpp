@@ -9,6 +9,11 @@
 
 float zAmt = -1.0f/256;
 float zPos = 0.5;
+float angle = 0.f;
+float yRotation = 0.f;
+float xRotation = 0.f;
+
+GLfloat* backData = (GLfloat*) malloc(sizeof(GLfloat) * 256 * 256);
 
 GLuint raw_texture_load( const char *filename, int width, int height )
 {
@@ -64,14 +69,14 @@ GLuint raw_texture3d_load( const char *filename, int width, int height, int dept
   glBindTexture(GL_TEXTURE_3D, texture);
 
   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-  gluBuild3DMipmaps( GL_TEXTURE_3D, 4, width, height, depth, GL_RGBA, GL_UNSIGNED_BYTE, data );
-
+  // gluBuild3DMipmaps( GL_TEXTURE_3D, 4, width, height, depth, GL_RGBA, GL_UNSIGNED_BYTE, data );
+  glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB, width, height, depth, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
   free(data);
   return texture;
 }
@@ -101,6 +106,27 @@ void Timer(int value)
 {
   glutPostRedisplay();
   glutTimerFunc( 15, Timer, 0 );
+}
+
+void keyboard(int key, int x, int y)
+{
+  switch (key)
+  {
+    case GLUT_KEY_LEFT:
+      xRotation -= 0.1;
+      break;
+    case GLUT_KEY_RIGHT:
+      xRotation += 0.1;
+      angle += 0.1;
+      break;
+    case GLUT_KEY_UP:
+      yRotation += 0.1;
+      break;
+    case GLUT_KEY_DOWN:
+      yRotation -= 0.1;
+      break;
+  }
+
 }
 
 void display()
@@ -133,22 +159,38 @@ void display()
   glEnable( GL_TEXTURE_3D );
   GLuint texture = raw_texture3d_load("skull.raw", 256, 256, 256);
   glBindTexture( GL_TEXTURE_3D, texture );
+
   zPos += zAmt/2.0f;
 
-  glRotatef(0.f, 0.f, 1.f, 0.f);
-
+  glRotatef(angle, 0.f, 1.f, 0.f);
+  glTranslatef(xRotation, yRotation, 1.4f);
   glBegin(GL_QUADS);
     zPos += zAmt / 2.0f;
-    for(int i = 256-1; i >= 0; i--)
+    for(int i = 100-1; i >= 0; i--)
     {
       float tex = (((float)i)/256);
-      glTexCoord3f(0, 0, tex); glVertex3f(-0.5, -0.5, zPos);
-      glTexCoord3f(0, 1, tex); glVertex3f(-0.5,  0.5, zPos);
-      glTexCoord3f(1, 1, tex); glVertex3f( 0.5,  0.5, zPos);
-      glTexCoord3f(1, 0, tex); glVertex3f( 0.5, -0.5, zPos);
+      glTexCoord3f(0, 0, tex); glVertex3f(0, 0, zPos);
+      glTexCoord3f(0, 0.15, tex); glVertex3f(0,  1, zPos);
+      glTexCoord3f(0.15, 0.15, tex); glVertex3f( 1,  1, zPos);
+      glTexCoord3f(0.15, 0, tex); glVertex3f( 1, 0, zPos);
       zPos += zAmt;
     }
   glEnd();
+
+  // create a frame buffer object
+  // bind it to screen
+  // read it by glReadPixles to specific target
+
+  glPushMatrix();
+  glTranslatef(-2.f, 0.f, 0.4f);
+  glBegin(GL_QUADS);
+    glColor3f(1.f, 0.f, 0.f);
+    glVertex3f(1.f, 1.f, 0.f);
+    glVertex3f(-1.f, 1.f, 0.f);
+    glVertex3f(-1.f, -1.f, 0.f);
+    glVertex3f(1.f, -1.f, 0.f);
+  glEnd();
+  glPopMatrix();
 
   glutSwapBuffers();
 }
@@ -161,6 +203,7 @@ int main(int argc, char** argv)
   glutCreateWindow(argv[1]);
   glutReshapeFunc(reshape);
   glutDisplayFunc(display);
+  glutSpecialFunc(keyboard);
   initGL();
   //glutTimerFunc(0, Timer, 0);
   glutMainLoop();
