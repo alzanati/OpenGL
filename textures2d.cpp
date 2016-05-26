@@ -144,15 +144,13 @@ void display()
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 
+  glEnable( GL_TEXTURE_2D );
   // camera transformations
-  gluLookAt(0.f, 1.0f, 4.5f,
+  gluLookAt(2.f, 2.0f, 4.5f,
             xRotation, yRotation, 0.f,
             0.f ,1.f, 0.f);
 
   // GLuint texture = raw_texture_load( "skull.raw", 256, 256 );
-  GLuint texture = soil_texture_load("seg3.png");
-  glEnable( GL_TEXTURE_2D );
-  glBindTexture( GL_TEXTURE_2D, texture );
 
   // draw axies
   glBegin(GL_LINES);
@@ -175,22 +173,72 @@ void display()
 
   glBegin(GL_QUADS);
     glColor3f(1.f, 1.f, 1.f);
-    glTexCoord2d(0.f, 0.f);
     glVertex2d(-1.f, -1.f);
-
-    glTexCoord2d(1.f, 0.f);
     glVertex2d(+1.f, -1.f);
-
-    glTexCoord2d(1.f, 1.f);
     glVertex2d(+1.f, +1.f);
-
-    glTexCoord2d(0.f, 1.f);
     glVertex2d(-1.f, +1.f);
   glEnd();
 
   glPopMatrix();
 
-    angleCube += 0.2;
+  GLuint texture = soil_texture_load("seg3.png");
+  glBindTexture( GL_TEXTURE_2D, texture );
+
+  //GLuint texture1 = soil_texture_load("cameraman1.png");
+  //glBindTexture( GL_TEXTURE_2D, texture1 );
+
+  glBegin(GL_QUADS);
+    glColor3f(0.0f, 1.0f, 0.0f);     // Green
+    glTexCoord2d(0.f, 0.f);
+    glVertex3f( 1.0f, 1.0f, -1.0f);
+    glTexCoord2d(1.f, 0.f);
+    glVertex3f(-1.0f, 1.0f, -1.0f);
+    glTexCoord2d(1.f, 1.f);
+    glVertex3f(-1.0f, 1.0f,  1.0f);
+    glTexCoord2d(0.f, 1.f);
+    glVertex3f( 1.0f, 1.0f,  1.0f);
+
+    // Bottom face (y = -1.0f)
+    glColor3f(1.0f, 0.5f, 0.0f);     // Orange
+    glVertex3f( 1.0f, -1.0f,  1.0f);
+    glVertex3f(-1.0f, -1.0f,  1.0f);
+    glVertex3f(-1.0f, -1.0f, -1.0f);
+    glVertex3f( 1.0f, -1.0f, -1.0f);
+
+    // Front face  (z = 1.0f)
+    glColor3f(0.6f, 0.3f, 0.0f);     // Red
+    glTexCoord2d(0.f, 0.f);
+    glVertex3f( 1.0f,  1.0f, 1.0f);
+    glTexCoord2d(1.f, 0.f);
+    glVertex3f(-1.0f,  1.0f, 1.0f);
+    glTexCoord2d(1.f, 1.f);
+    glVertex3f(-1.0f, -1.0f, 1.0f);
+    glTexCoord2d(0.f, 1.f);
+    glVertex3f( 1.0f, -1.0f, 1.0f);
+
+    // Back face (z = -1.0f)
+    glColor3f(1.0f, 1.0f, 0.0f);     // Yellow
+    glVertex3f( 1.0f, -1.0f, -1.0f);
+    glVertex3f(-1.0f, -1.0f, -1.0f);
+    glVertex3f(-1.0f,  1.0f, -1.0f);
+    glVertex3f( 1.0f,  1.0f, -1.0f);
+
+    // Left face (x = -1.0f)
+    glColor3f(0.0f, 0.0f, 1.0f);     // Blue
+    glVertex3f(-1.0f,  1.0f,  1.0f);
+    glVertex3f(-1.0f,  1.0f, -1.0f);
+    glVertex3f(-1.0f, -1.0f, -1.0f);
+    glVertex3f(-1.0f, -1.0f,  1.0f);
+
+    // Right face (x = 1.0f)
+    glColor3f(1.0f, 0.0f, 1.0f);     // Magenta
+    glVertex3f(1.0f,  1.0f, -1.0f);
+    glVertex3f(1.0f,  1.0f,  1.0f);
+    glVertex3f(1.0f, -1.0f,  1.0f);
+    glVertex3f(1.0f, -1.0f, -1.0f);
+  glEnd();
+
+  angleCube += 0.2;
   glutSwapBuffers();
 }
 
