@@ -13,7 +13,11 @@
 #define HEIGHT 480
 
 float angleCube = 0.f;
+float xRotation = 0.f;
+float yRotation = 0.f;
+float zRotation = 0.f;
 bool toggle = false;
+
 
 void glInit()
 {
@@ -42,8 +46,23 @@ void Timer(int value)
   glutTimerFunc(15, Timer, 0);
 }
 
-void keyboard(unsigned char key, int x, int y)
+void keyboard(int key, int x, int y)
 {
+  switch (key)
+  {
+    case GLUT_KEY_LEFT:
+      xRotation -= 0.1;
+      break;
+    case GLUT_KEY_RIGHT:
+      xRotation += 0.1;
+      break;
+    case GLUT_KEY_UP:
+      yRotation += 0.1;
+      break;
+    case GLUT_KEY_DOWN:
+      yRotation -= 0.1;
+      break;
+  }
 
 }
 
@@ -53,10 +72,12 @@ void display()
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 
+  // camera transformations
   gluLookAt(2.5f, 2.5f, 2.5f,
-            0.f, 0.f, 0.f,
+            xRotation, yRotation, 0.f,
             0.f ,1.f, 0.f);
 
+  // draw axies
   glBegin(GL_LINES);
     // x-axis
     glColor3f(1.f, 0.f, 0.f);
@@ -72,6 +93,7 @@ void display()
     glVertex3f(0.f, 0.f, -50.f);
   glEnd();
 
+  // draw cube
   glPushMatrix();
   glRotatef(angleCube, 0.f, 0.f, 1.f);
 
@@ -120,7 +142,6 @@ void display()
 
   glPopMatrix();
 
-  printf("%f\n", angleCube);
   if( angleCube >= 100.f )
     toggle = true;
   else if( angleCube <= 0.f )
@@ -130,7 +151,7 @@ void display()
     angleCube += 0.2;
   else if( toggle == true )
     angleCube -= 0.2;
-    
+
   glutSwapBuffers();
 }
 
@@ -143,7 +164,7 @@ int main(int argc, char** argv)
   glutCreateWindow(argv[1]);
   glutDisplayFunc(display);
   glutReshapeFunc(reshape);
-  glutKeyboardFunc(keyboard);
+  glutSpecialFunc(keyboard);
   glInit();
   glutTimerFunc(0, Timer, 0);
   glutMainLoop();
