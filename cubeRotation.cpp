@@ -1,3 +1,7 @@
+/**
+@AUTHORS: Mohamed Hosny Ahmed
+**/
+
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
@@ -9,6 +13,7 @@
 #define HEIGHT 480
 
 float angleCube = 0.f;
+bool toggle = false;
 
 void glInit()
 {
@@ -22,13 +27,13 @@ void glInit()
 
 void reshape(int w, int h)
 {
-  float aspect = WIDTH / HEIGHT;
+  float aspect = (float) WIDTH / (float) HEIGHT;
   glViewport(0, 0, WIDTH, HEIGHT);
 
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
 
-  gluPerspective(45.f, aspect, 0.1f, 100.f);
+  gluPerspective(45.f, aspect, 0.1, 100.f);
 }
 
 void Timer(int value)
@@ -37,15 +42,38 @@ void Timer(int value)
   glutTimerFunc(15, Timer, 0);
 }
 
+void keyboard(unsigned char key, int x, int y)
+{
+
+}
+
 void display()
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glMatrixMode(GL_MODELVIEW);
-
-  // Render a color-cube consisting of 6 quads with different colors
   glLoadIdentity();
-  glTranslatef(1.f, 1.0f, -7.0f);
-  glRotatef(angleCube, 1.0f, 1.0f, 0.0f);
+
+  gluLookAt(2.5f, 2.5f, 2.5f,
+            0.f, 0.f, 0.f,
+            0.f ,1.f, 0.f);
+
+  glBegin(GL_LINES);
+    // x-axis
+    glColor3f(1.f, 0.f, 0.f);
+    glVertex3f(-50.f, 0.f, 0.f);
+    glVertex3f(50.f, 0.f, 0.f);
+    // y-axis
+    glColor3f(0.f, 1.f, 0.f);
+    glVertex3f(0.f, -50.f, 0.f);
+    glVertex3f(0.f, 50.f, 0.f);
+    // z-axis
+    glColor3f(0.f, 0.f, 1.f);
+    glVertex3f(0.f, 0.f, 50.f);
+    glVertex3f(0.f, 0.f, -50.f);
+  glEnd();
+
+  glPushMatrix();
+  glRotatef(angleCube, 0.f, 0.f, 1.f);
 
   glBegin(GL_QUADS);
     glColor3f(0.0f, 1.0f, 0.0f);     // Green
@@ -90,7 +118,19 @@ void display()
     glVertex3f(1.0f, -1.0f, -1.0f);
   glEnd();
 
-  angleCube += 0.2;
+  glPopMatrix();
+
+  printf("%f\n", angleCube);
+  if( angleCube >= 100.f )
+    toggle = true;
+  else if( angleCube <= 0.f )
+    toggle = false;
+
+  if( toggle == false )
+    angleCube += 0.2;
+  else if( toggle == true )
+    angleCube -= 0.2;
+    
   glutSwapBuffers();
 }
 
@@ -103,6 +143,7 @@ int main(int argc, char** argv)
   glutCreateWindow(argv[1]);
   glutDisplayFunc(display);
   glutReshapeFunc(reshape);
+  glutKeyboardFunc(keyboard);
   glInit();
   glutTimerFunc(0, Timer, 0);
   glutMainLoop();
