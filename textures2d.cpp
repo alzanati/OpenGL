@@ -3,6 +3,7 @@
 #include <GL/glut.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <SOIL/SOIL.h>
 
 #define WIDTH 680
 #define HEIGHT 480
@@ -62,6 +63,33 @@ GLuint raw_texture_load( const char *filename, int width, int height )
   return texture;
 }
 
+GLuint soil_texture_load( const char *filename )
+{
+  GLuint texture;
+
+  int width, height;
+  unsigned char* image = SOIL_load_image(filename, &width, &height, 0, SOIL_LOAD_RGB);
+
+  // allocate a texture name
+  glGenTextures(1, &texture);
+
+  // select our current texture
+  glBindTexture(GL_TEXTURE_2D, texture);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+
+  // free buffer
+  SOIL_free_image_data(image);
+
+  return texture;
+}
+
 void initGL()
 {
   glClearColor(0.f, 0.f, 0.f, 0.f);
@@ -117,12 +145,12 @@ void display()
   glLoadIdentity();
 
   // camera transformations
-  gluLookAt(2.5f, 2.5f, 2.5f,
+  gluLookAt(0.f, 1.0f, 4.5f,
             xRotation, yRotation, 0.f,
             0.f ,1.f, 0.f);
 
-
-  GLuint texture = raw_texture_load( "texture.raw", 256, 256 );
+  // GLuint texture = raw_texture_load( "skull.raw", 256, 256 );
+  GLuint texture = soil_texture_load("seg3.png");
   glEnable( GL_TEXTURE_2D );
   glBindTexture( GL_TEXTURE_2D, texture );
 
@@ -146,58 +174,23 @@ void display()
   glRotatef( angleCube, 0.f, 0.f, 1.f );
 
   glBegin(GL_QUADS);
-    glColor3f(0.0f, 1.0f, 0.0f);     // Green
-    glVertex3f( 1.0f, 1.0f, -1.0f);
-    glVertex3f(-1.0f, 1.0f, -1.0f);
-    glVertex3f(-1.0f, 1.0f,  1.0f);
-    glVertex3f( 1.0f, 1.0f,  1.0f);
+    glColor3f(1.f, 1.f, 1.f);
+    glTexCoord2d(0.f, 0.f);
+    glVertex2d(-1.f, -1.f);
 
-    // Bottom face (y = -1.0f)
-    glColor3f(1.0f, 0.5f, 0.0f);     // Orange
-    glVertex3f( 1.0f, -1.0f,  1.0f);
-    glVertex3f(-1.0f, -1.0f,  1.0f);
-    glVertex3f(-1.0f, -1.0f, -1.0f);
-    glVertex3f( 1.0f, -1.0f, -1.0f);
+    glTexCoord2d(1.f, 0.f);
+    glVertex2d(+1.f, -1.f);
 
-    // Front face  (z = 1.0f)
-    glColor3f(1.0f, 0.0f, 0.0f);     // Red
-    glVertex3f( 1.0f,  1.0f, 1.0f);
-    glVertex3f(-1.0f,  1.0f, 1.0f);
-    glVertex3f(-1.0f, -1.0f, 1.0f);
-    glVertex3f( 1.0f, -1.0f, 1.0f);
+    glTexCoord2d(1.f, 1.f);
+    glVertex2d(+1.f, +1.f);
 
-    // Back face (z = -1.0f)
-    glColor3f(1.0f, 1.0f, 0.0f);     // Yellow
-    glVertex3f( 1.0f, -1.0f, -1.0f);
-    glVertex3f(-1.0f, -1.0f, -1.0f);
-    glVertex3f(-1.0f,  1.0f, -1.0f);
-    glVertex3f( 1.0f,  1.0f, -1.0f);
-
-    // Left face (x = -1.0f)
-    glColor3f(0.0f, 0.0f, 1.0f);     // Blue
-    glVertex3f(-1.0f,  1.0f,  1.0f);
-    glVertex3f(-1.0f,  1.0f, -1.0f);
-    glVertex3f(-1.0f, -1.0f, -1.0f);
-    glVertex3f(-1.0f, -1.0f,  1.0f);
-
-    // Right face (x = 1.0f)
-    glColor3f(1.0f, 0.0f, 1.0f);     // Magenta
-    glTexCoord3f(1.f, 1.f, 1.f);
-    glVertex3f(1.0f,  1.0f, -1.0f);
-
-    glTexCoord3f(1.f, 1.f, 1.f);
-    glVertex3f(1.0f,  1.0f,  1.0f);
-
-    glTexCoord3f(1.f, -1.f, 1.f);
-    glVertex3f(1.0f, -1.0f,  1.0f);
-
-    glTexCoord3f(1.f, -1.f, 1.f);
-    glVertex3f(1.0f, -1.0f, -1.0f);
+    glTexCoord2d(0.f, 1.f);
+    glVertex2d(-1.f, +1.f);
   glEnd();
 
   glPopMatrix();
 
-    angleCube -= 0.2;
+    angleCube += 0.2;
   glutSwapBuffers();
 }
 
