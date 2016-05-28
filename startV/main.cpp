@@ -69,17 +69,17 @@ int main(int argc, char** argv)
         -0.5f, -0.5f, 0.f,
         0.5f, -0.5f, 0.f,
         0.5f, 0.5f, 0.f,
-        -0.5f, 0.5f, 0.f
+        -0.5f, 0.5f, 0.f,
     };
     const GLfloat colors[]=
     {
         0.0f, 0.0f, 1.0f,
         0.0f, 1.0f, 0.0f,
         1.0f, 0.0f, 0.0f,
-        1.0, 1.0, 0.f
+        1.0f, 1.0f, 0.0f,
     };
 
-
+    // bind buffers
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
@@ -108,7 +108,7 @@ int main(int argc, char** argv)
 
     // transformations
     glm::mat4 rotate;
-    rotate = glm::rotate(rotate, timed*glm::degrees(45.f), glm::vec3(0.0f, 0.0f, 1.0f));
+    rotate = glm::rotate(rotate, glm::degrees(0.f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     glm::mat4 trans;
     trans = glm::translate(trans, glm::vec3(0.5f, -0.3f, 0.0f));
@@ -121,11 +121,11 @@ int main(int argc, char** argv)
     GLint uniTrans = glGetUniformLocation(program, "trans");
     glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(rotate));
 
-    /* unbind to this vertex array */
-    glBindVertexArray(0);
-
     // Perform feedback transform
     glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, position_attrib, feedBack_buffer);
+
+    /* unbind to this vertex array */
+    glBindVertexArray(0);
 
     /* start rendering */
     while(!glfwWindowShouldClose(window))
@@ -136,13 +136,11 @@ int main(int argc, char** argv)
 
         glBindVertexArray(vertex_array[0]);
         glBeginTransformFeedback(GL_TRIANGLES);
+            glDrawArrays(GL_TRIANGLES, 0, 4);
+        glEndTransformFeedback();
 
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
         glfwSwapBuffers(window);
         glfwPollEvents();
-
-        glEndTransformFeedback();
-        glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
         glFlush();
     }
 
