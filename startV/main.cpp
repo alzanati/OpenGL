@@ -1,6 +1,7 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,7 +55,6 @@ int main(int argc, char** argv)
 
     GLuint vertex_array_id;
     glGenVertexArrays(1, &vertex_array_id);
-    glBindVertexArray(vertex_array_id);
 
     const GLfloat vertices[] =
     {
@@ -77,6 +77,10 @@ int main(int argc, char** argv)
     glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
 
+    /* bind to VAO */
+    /* so you can bind all vertexs to one vao then use it in any location */
+    glBindVertexArray(vertex_array_id);
+
     GLint position_attrib = glGetAttribLocation(program, "position");
     glEnableVertexAttribArray(position_attrib);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
@@ -88,6 +92,23 @@ int main(int argc, char** argv)
     glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
     glVertexAttribPointer(color_attrib, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     //should bind to shader attribute
+
+    glm::mat4 rotate;
+    rotate = glm::rotate(rotate, glm::degrees(60.f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    glm::mat4 trans;
+    trans = glm::translate(trans, glm::vec3(0.5f, -0.3f, 0.0f));
+
+    glm::mat4 scale;
+    scale = glm::scale(scale, glm::vec3(0.5f, 1.f, 0.5));
+    glm::mat4 model = scale * trans * rotate;
+
+    GLint uniTrans = glGetUniformLocation(program, "trans");
+    glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(rotate));
+
+    /* unbind to this vertex array */
+    glBindVertexArray(0);
+
 
     /* test glm
     glm::mat2 mat(10.f);
@@ -127,7 +148,7 @@ int main(int argc, char** argv)
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Draw a rectangle from the 2 triangles using 6 vertices
+        glBindVertexArray(vertex_array_id);
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
         glfwSwapBuffers(window);
         glfwPollEvents();
