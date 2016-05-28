@@ -69,14 +69,12 @@ int main(int argc, char** argv)
         -0.5f, -0.5f, 0.f,
         0.5f, -0.5f, 0.f,
         0.5f, 0.5f, 0.f,
-        -0.5f, 0.5f, 0.f,
     };
     const GLfloat colors[]=
     {
         0.0f, 0.0f, 1.0f,
         0.0f, 1.0f, 0.0f,
         1.0f, 0.0f, 0.0f,
-        1.0f, 1.0f, 0.0f,
     };
 
     // bind buffers
@@ -106,20 +104,15 @@ int main(int argc, char** argv)
     glBindBuffer(GL_ARRAY_BUFFER, feedBack_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), NULL, GL_STATIC_READ);
 
-    // transformations
-    glm::mat4 rotate;
-    rotate = glm::rotate(rotate, glm::degrees(0.f), glm::vec3(0.0f, 0.0f, 1.0f));
+
 
     glm::mat4 trans;
     trans = glm::translate(trans, glm::vec3(0.5f, -0.3f, 0.0f));
 
     glm::mat4 scale;
     scale = glm::scale(scale, glm::vec3(0.5f, 1.f, 0.5));
-    glm::mat4 model = scale * trans * rotate;
+   // glm::mat4 model = scale * trans * rotate;
 
-    // uniform model matrix
-    GLint uniTrans = glGetUniformLocation(program, "trans");
-    glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(rotate));
 
     // Perform feedback transform
     glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, position_attrib, feedBack_buffer);
@@ -134,9 +127,17 @@ int main(int argc, char** argv)
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        // uniform model matrix
+        // transformations
+        glm::mat4 rotate;
+        rotate = glm::rotate(rotate, timed * glm::degrees(20.f), glm::vec3(0.0f, 0.0f, 1.0f));
+        GLint uniTrans = glGetUniformLocation(program, "trans");
+        glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(rotate));
+
+        timed += 0.0001;
         glBindVertexArray(vertex_array[0]);
         glBeginTransformFeedback(GL_TRIANGLES);
-            glDrawArrays(GL_TRIANGLES, 0, 4);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
         glEndTransformFeedback();
 
         glfwSwapBuffers(window);
@@ -144,10 +145,11 @@ int main(int argc, char** argv)
         glFlush();
     }
 
+    // dispaly data
     float* data = (float*) malloc(sizeof(vertices));
     glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, sizeof(vertices), data);
 
-    for(int i = 0; i < 12; i++)
+    for(int i = 0; i < sizeof(vertices) / sizeof(float); i++)
         std::cout << data[i] << std::endl;
 
     //clean up the memories
