@@ -31,7 +31,7 @@ void glInit()
 
 void reshape(int w, int h)
 {
-  float aspect = (float) WIDTH / (float) HEIGHT;
+  float aspect = (float) w / (float) h;
   glViewport(0, 0, WIDTH, HEIGHT);
 
   glMatrixMode(GL_PROJECTION);

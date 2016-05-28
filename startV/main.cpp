@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include "shaders.hpp"
 
+float timed = 0.f;
+
 int main(int argc, char** argv)
 {
     // setup glfw
@@ -45,16 +47,22 @@ int main(int argc, char** argv)
 
     GLuint program = LoadShaders("/home/mohamed/workspace/OpenGl/startV/simple.vert",
                                  "/home/mohamed/workspace/OpenGl/startV/simple.frag");
-    glBindFragDataLocation(program, 0, "color_out");
+
+    // transform feedback
+    const char* varying[] = {"v_position"};
+    glTransformFeedbackVaryings(program, 1, varying, GL_INTERLEAVED_ATTRIBS);
+    glLinkProgram(program);
     glUseProgram(program);
 
     GLuint vertex_buffer;
     GLuint color_buffer;
+    GLuint feedBack_buffer;
     glGenBuffers(1, &vertex_buffer);
     glGenBuffers(1, &color_buffer);
+    glGenBuffers(1, &feedBack_buffer);
 
-    GLuint vertex_array_id;
-    glGenVertexArrays(1, &vertex_array_id);
+    GLuint vertex_array[2];
+    glGenVertexArrays(1, vertex_array);
 
     const GLfloat vertices[] =
     {
@@ -71,6 +79,7 @@ int main(int argc, char** argv)
         1.0, 1.0, 0.f
     };
 
+
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
@@ -79,7 +88,7 @@ int main(int argc, char** argv)
 
     /* bind to VAO */
     /* so you can bind all vertexs to one vao then use it in any location */
-    glBindVertexArray(vertex_array_id);
+    glBindVertexArray(vertex_array[0]);
 
     GLint position_attrib = glGetAttribLocation(program, "position");
     glEnableVertexAttribArray(position_attrib);
@@ -93,8 +102,13 @@ int main(int argc, char** argv)
     glVertexAttribPointer(color_attrib, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     //should bind to shader attribute
 
+    //tbo /* glEnable(GL_RASTERIZER_DISCARD); disable rendering */
+    glBindBuffer(GL_ARRAY_BUFFER, feedBack_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), NULL, GL_STATIC_READ);
+
+    // transformations
     glm::mat4 rotate;
-    rotate = glm::rotate(rotate, glm::degrees(60.f), glm::vec3(0.0f, 0.0f, 1.0f));
+    rotate = glm::rotate(rotate, timed*glm::degrees(45.f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     glm::mat4 trans;
     trans = glm::translate(trans, glm::vec3(0.5f, -0.3f, 0.0f));
@@ -103,63 +117,47 @@ int main(int argc, char** argv)
     scale = glm::scale(scale, glm::vec3(0.5f, 1.f, 0.5));
     glm::mat4 model = scale * trans * rotate;
 
+    // uniform model matrix
     GLint uniTrans = glGetUniformLocation(program, "trans");
     glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(rotate));
 
     /* unbind to this vertex array */
     glBindVertexArray(0);
 
+    // Perform feedback transform
+    glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, position_attrib, feedBack_buffer);
 
-    /* test glm
-    glm::mat2 mat(10.f);
-    glm::vec2 myVec2 = glm::vec2(1.f, 4.f);
-    glm::vec3 ve33(1.f);
-    glm::vec2 tt = mat[0];
-    std::cout << tt.x << std::endl;
-    */
-
-    /*
-    glm::vec2 x(5.f, 4.f);
-    glm::vec2 y(6.f, 5.f);
-    glm::vec2 vv = x * y;
-    std::cout << vv.x << std::endl;
-    */
-
-    /*
-    glm::vec4 my = glm::vec4(1.f, 2.f, 3.f, 2.f);
-    glm::mat4 myMat4 = glm::mat4(my, my, my, my);
-    myMat4 = myMat4 * myMat4;
-    std::cout << myMat4[0].y << std::endl; // first row second element
-    */
-
-    /*
-    const glm::mat4 myMat4 = glm::mat4(1.f, 0.f, 0.f, 1.f,
-                                       1.f, 2.f, 1.f, 1.f,
-                                       1.f, 2.f, 1.f, 1.f,
-                                       1.f, 2.f, 1.f, 1.f);
-    glm::vec4 my = glm::vec4(1.f, 2.f, 3.f, 2.f);
-    glm::vec4 mm = myMat4 * my;
-    std::cout << mm.y << std::endl;
-    */
-
+    /* start rendering */
     while(!glfwWindowShouldClose(window))
     {
         // Clear the screen to black
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glBindVertexArray(vertex_array_id);
+        glBindVertexArray(vertex_array[0]);
+        glBeginTransformFeedback(GL_TRIANGLES);
+
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        glEndTransformFeedback();
+        glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
+        glFlush();
     }
+
+    float* data = (float*) malloc(sizeof(vertices));
+    glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, sizeof(vertices), data);
+
+    for(int i = 0; i < 12; i++)
+        std::cout << data[i] << std::endl;
 
     //clean up the memories
     glDisableVertexAttribArray(position_attrib);
     glDisableVertexAttribArray(color_attrib);
     glDeleteBuffers(1, &vertex_buffer);
     glDeleteBuffers(1, &color_buffer);
-    glDeleteVertexArrays(1, &vertex_array_id);
+    glDeleteVertexArrays(1, vertex_array);
     glDeleteProgram(program);
 
     // Close OpenGL window and terminate GLFW
