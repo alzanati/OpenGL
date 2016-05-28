@@ -1,5 +1,4 @@
-#include <GL/gl.h>
-#include <GL/glu.h>
+#include <GL/glew.h>
 #include <GL/glut.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +11,7 @@ float zPos = 0.5;
 float angle = 0.f;
 float yRotation = 0.f;
 float xRotation = 0.f;
+int control = 1;
 
 GLfloat* backData = (GLfloat*) malloc(sizeof(GLfloat) * 256 * 256);
 
@@ -99,7 +99,7 @@ void reshape(int w, int h)
   glMatrixMode( GL_PROJECTION );
   glLoadIdentity();
 
-  gluPerspective( 45.f, ratio, 1.f, 100.f );
+  gluPerspective( 60.f, ratio, 1.f, 100.f );
 }
 
 void Timer(int value)
@@ -117,7 +117,6 @@ void keyboard(int key, int x, int y)
       break;
     case GLUT_KEY_RIGHT:
       xRotation += 0.1;
-      angle += 0.1;
       break;
     case GLUT_KEY_UP:
       yRotation += 0.1;
@@ -135,9 +134,7 @@ void display()
   glMatrixMode( GL_MODELVIEW );
   glLoadIdentity();
 
-  gluLookAt( 2.f, 2.f, 2.5f,
-             0.f, 0.f, 0.f,
-             0.f ,1.f, 0.f );
+  gluLookAt( 2.6f, -0.3f, 2.0f, xRotation, yRotation, 0.f, 0.f ,1.f, 0.f );
 
   // draw axies
   glBegin( GL_LINES );
@@ -155,42 +152,48 @@ void display()
     glVertex3f(0.f, 0.f, 50.f);
   glEnd();
 
-
+  // create texture
   glEnable( GL_TEXTURE_3D );
   GLuint texture = raw_texture3d_load("skull.raw", 256, 256, 256);
   glBindTexture( GL_TEXTURE_3D, texture );
 
-  zPos += zAmt/2.0f;
+  // // draw
+  // glPushMatrix();
+  // glRotatef(-70, 1.f, 0.f, 0.f);
+  // //glTranslatef(0.f, 0.4f, 0.f);
+  // glBegin(GL_QUADS);
+  //   glTexCoord3f(0, 0, 0.15); glVertex3f(0, 0, 0);
+  //   glTexCoord3f(0, 1, 0.15); glVertex3f(0,  1, 0);
+  //   glTexCoord3f(1, 1, 0.15); glVertex3f( 1,  1, 0);
+  //   glTexCoord3f(1, 0, 0.15); glVertex3f( 1, 0, 0);
+  // glEnd();
+  // glPopMatrix();
 
-  glRotatef(angle, 0.f, 1.f, 0.f);
-  glTranslatef(xRotation, yRotation, 1.4f);
-  glBegin(GL_QUADS);
-    zPos += zAmt / 2.0f;
-    for(int i = 100-1; i >= 0; i--)
-    {
-      float tex = (((float)i)/256);
-      glTexCoord3f(0, 0, tex); glVertex3f(0, 0, zPos);
-      glTexCoord3f(0, 0.15, tex); glVertex3f(0,  1, zPos);
-      glTexCoord3f(0.15, 0.15, tex); glVertex3f( 1,  1, zPos);
-      glTexCoord3f(0.15, 0, tex); glVertex3f( 1, 0, zPos);
-      zPos += zAmt;
-    }
-  glEnd();
+    // glPushMatrix();
+    // glTranslatef(-2.f, 0.f, 0.4f);
+    // glBegin(GL_QUADS);
+    //   glTexCoord2f(0.f, 0.f); glVertex3f(1.f, 1.f, 0.f);
+    //   glTexCoord2f(0.f, 1.f); glVertex3f(-1.f, 1.f, 0.f);
+    //   glTexCoord2f(1.f, 1.f); glVertex3f(-1.f, -1.f, 0.f);
+    //   glTexCoord2f(1.f, 0.f); glVertex3f(1.f, -1.f, 0.f);
+    // glEnd();
+    // glPopMatrix();
 
-  // create a frame buffer object
-  // bind it to screen
-  // read it by glReadPixles to specific target
-
-  glPushMatrix();
-  glTranslatef(-2.f, 0.f, 0.4f);
-  glBegin(GL_QUADS);
-    glColor3f(1.f, 0.f, 0.f);
-    glVertex3f(1.f, 1.f, 0.f);
-    glVertex3f(-1.f, 1.f, 0.f);
-    glVertex3f(-1.f, -1.f, 0.f);
-    glVertex3f(1.f, -1.f, 0.f);
-  glEnd();
-  glPopMatrix();
+    glTranslatef(0.5f, -0.3f, -2.f);
+    glRotatef(-4.f, 0.f, 1.f, 0.f);
+    float tex = 0.f;
+    glBegin(GL_QUADS);
+      zPos += zAmt / 2.0f;
+      for(int i = 256 - 1; i >= 0; i--)
+      {
+        tex += 0.01;
+        glTexCoord3f(0, 0, tex); glVertex3f(0, 0, zPos);
+        glTexCoord3f(0, 1, tex); glVertex3f(0,  1, zPos);
+        glTexCoord3f(1, 1, tex); glVertex3f( 1,  1, zPos);
+        glTexCoord3f(1, 0, tex); glVertex3f( 1, 0, zPos);
+        zPos += 0.25;
+      }
+    glEnd();
 
   glutSwapBuffers();
 }
@@ -204,6 +207,16 @@ int main(int argc, char** argv)
   glutReshapeFunc(reshape);
   glutDisplayFunc(display);
   glutSpecialFunc(keyboard);
+  glewExperimental = GL_TRUE;
+	glewInit();
+	if (glewIsSupported("GL_VERSION_3_3"))
+	   printf("Ready for OpenGL 3.3\n");
+	else
+  {
+		printf("OpenGL 3.3 not supported\n");
+		exit(1);
+	}
+
   initGL();
   //glutTimerFunc(0, Timer, 0);
   glutMainLoop();
