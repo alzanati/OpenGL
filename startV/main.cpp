@@ -56,13 +56,18 @@ int main(int argc, char** argv)
 
     GLuint vertex_buffer;
     GLuint color_buffer;
+    GLuint sVertex_buffer;
+    GLuint sColor_buffer;
     GLuint feedBack_buffer;
+
     glGenBuffers(1, &vertex_buffer);
     glGenBuffers(1, &color_buffer);
+    glGenBuffers(1, &sVertex_buffer);
+    glGenBuffers(1, &sColor_buffer);
     glGenBuffers(1, &feedBack_buffer);
 
     GLuint vertex_array[2];
-    glGenVertexArrays(1, vertex_array);
+    glGenVertexArrays(2, vertex_array);
 
     const GLfloat vertices[] =
     {
@@ -77,6 +82,25 @@ int main(int argc, char** argv)
         1.0f, 0.0f, 0.0f,
     };
 
+    const GLfloat sVertices[] =
+    {
+        -0.6f, 0.2f, 0.f,
+        -0.2f, 0.2f, 0.f,
+        -0.2f, 0.6f, 0.f,
+        -0.6f, 0.6f, 0.f,
+    };
+    const GLfloat sColors[]=
+    {
+        0.0f, 0.7f, 0.5f,
+        0.1f, 0.1f, 0.1f,
+        1.0f, 0.0f, 0.0f,
+        1.0f, 0.4f, 1.0f
+    };
+
+    /* bind to VAO */
+    /* so you can bind all vertexs to one vao then use it in any location */
+    glBindVertexArray(vertex_array[0]);
+
     // bind buffers
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
@@ -84,61 +108,78 @@ int main(int argc, char** argv)
     glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
 
-    /* bind to VAO */
-    /* so you can bind all vertexs to one vao then use it in any location */
-    glBindVertexArray(vertex_array[0]);
-
     GLint position_attrib = glGetAttribLocation(program, "position");
     glEnableVertexAttribArray(position_attrib);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
     glVertexAttribPointer(position_attrib, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-    //should bind to shader attribute
+
 
     GLint color_attrib = glGetAttribLocation(program, "color_in");
     glEnableVertexAttribArray(color_attrib);
     glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
     glVertexAttribPointer(color_attrib, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-    //should bind to shader attribute
 
     //tbo /* glEnable(GL_RASTERIZER_DISCARD); disable rendering */
     glBindBuffer(GL_ARRAY_BUFFER, feedBack_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), NULL, GL_STATIC_READ);
+    glBindVertexArray(0);
 
+    /* square data */
+    glBindVertexArray(vertex_array[1]);
 
+    glBindBuffer(GL_ARRAY_BUFFER, sVertex_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(sVertices), sVertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ARRAY_BUFFER, sColor_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(sColors), sColors, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(position_attrib);
+    glBindBuffer(GL_ARRAY_BUFFER, sVertex_buffer);
+    glVertexAttribPointer(position_attrib, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    glEnableVertexAttribArray(color_attrib);
+    glBindBuffer(GL_ARRAY_BUFFER, sColor_buffer);
+    glVertexAttribPointer(color_attrib, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glBindVertexArray(0);
+
+    // transformations
+    glm::mat4 rotate;
+    rotate = glm::rotate(rotate, glm::degrees(0.f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     glm::mat4 trans;
     trans = glm::translate(trans, glm::vec3(0.5f, -0.3f, 0.0f));
 
     glm::mat4 scale;
     scale = glm::scale(scale, glm::vec3(0.5f, 1.f, 0.5));
-   // glm::mat4 model = scale * trans * rotate;
+    glm::mat4 model = scale * trans * rotate;
 
+    // uniform model matrix
+    GLint uniTrans = glGetUniformLocation(program, "trans");
+    glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(rotate));
 
     // Perform feedback transform
     glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, position_attrib, feedBack_buffer);
 
     /* unbind to this vertex array */
-    glBindVertexArray(0);
+    glEnable(GL_DEPTH_TEST);
+    //glBindVertexArray(0);
 
     /* start rendering */
     while(!glfwWindowShouldClose(window))
     {
         // Clear the screen to black
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // uniform model matrix
-        // transformations
-        glm::mat4 rotate;
-        rotate = glm::rotate(rotate, timed * glm::degrees(20.f), glm::vec3(0.0f, 0.0f, 1.0f));
-        GLint uniTrans = glGetUniformLocation(program, "trans");
-        glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(rotate));
-
-        timed += 0.0001;
-        glBindVertexArray(vertex_array[0]);
         glBeginTransformFeedback(GL_TRIANGLES);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glBindVertexArray(vertex_array[0]);
+            glDrawArrays(GL_TRIANGLES, 0, 4);
+            glBindVertexArray(0);
         glEndTransformFeedback();
+
+        glBindVertexArray(vertex_array[1]);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        glBindVertexArray(0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
