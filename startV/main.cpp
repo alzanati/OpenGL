@@ -144,7 +144,7 @@ int main(int argc, char** argv)
 
     // transformations
     glm::mat4 rotate;
-    rotate = glm::rotate(rotate, glm::degrees(0.f), glm::vec3(0.0f, 0.0f, 1.0f));
+    rotate = glm::rotate(rotate, glm::degrees(20.f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     glm::mat4 trans;
     trans = glm::translate(trans, glm::vec3(0.5f, -0.3f, 0.0f));
@@ -156,6 +156,10 @@ int main(int argc, char** argv)
     // uniform model matrix
     GLint uniTrans = glGetUniformLocation(program, "trans");
     glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(rotate));
+
+    // 1 for no rotation, 0 for rotation
+    GLint state = glGetUniformLocation(program, "state");
+    glUniform1i(state, 1);
 
     // Perform feedback transform
     glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, position_attrib, feedBack_buffer);
