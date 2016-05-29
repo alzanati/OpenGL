@@ -23,8 +23,9 @@ int main(int argc, char** argv)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
 
-    GLFWwindow* window =  glfwCreateWindow(680, 480, "startV", NULL, NULL);
+    GLFWwindow* window =  glfwCreateWindow(680, 480, "", NULL, NULL);
     if(!window)
     {
         fprintf( stderr, "Failed to open GLFW window. If you "
@@ -71,9 +72,9 @@ int main(int argc, char** argv)
 
     const GLfloat vertices[] =
     {
-        -0.5f, -0.5f, 0.f,
-        0.5f, -0.5f, 0.f,
-        0.5f, 0.5f, 0.f,
+        -0.5f, -0.5f, 0.3f,
+        0.5f, -0.5f, 0.1f,
+        0.5f, 0.5f, 0.2f,
     };
     const GLfloat colors[]=
     {
@@ -119,7 +120,7 @@ int main(int argc, char** argv)
     glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
     glVertexAttribPointer(color_attrib, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-    //tbo /* glEnable(GL_RASTERIZER_DISCARD); disable rendering */
+    //tbo /* glEnable(GL_RASTERIZER_DISCARD); disable rendering off context */
     glBindBuffer(GL_ARRAY_BUFFER, feedBack_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), NULL, GL_STATIC_READ);
     glBindVertexArray(0);
@@ -166,34 +167,29 @@ int main(int argc, char** argv)
 
     /* unbind to this vertex array */
     glEnable(GL_DEPTH_TEST);
-    //glBindVertexArray(0);
 
-    /* start rendering */
-    while(!glfwWindowShouldClose(window))
-    {
-        // Clear the screen to black
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    /* start rendering in off context to just done opertions in shader in gpu*/
+    // Clear the screen to black
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glBeginTransformFeedback(GL_TRIANGLES);
-            glBindVertexArray(vertex_array[0]);
-            glDrawArrays(GL_TRIANGLES, 0, 4);
-            glBindVertexArray(0);
-        glEndTransformFeedback();
-
-        glBindVertexArray(vertex_array[1]);
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    glBeginTransformFeedback(GL_TRIANGLES);
+        glBindVertexArray(vertex_array[0]);
+        glDrawArrays(GL_TRIANGLES, 0, 4);
         glBindVertexArray(0);
+    glEndTransformFeedback();
 
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-        glFlush();
-    }
+    glBindVertexArray(vertex_array[1]);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    glBindVertexArray(0);
+
+    glfwSwapBuffers(window);
+    glfwPollEvents();
+    glFlush();
 
     // dispaly data
     float* data = (float*) malloc(sizeof(vertices));
     glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, sizeof(vertices), data);
-
     for(int i = 0; i < sizeof(vertices) / sizeof(float); i++)
         std::cout << data[i] << std::endl;
 
