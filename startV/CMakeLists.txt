@@ -19,23 +19,38 @@ include( GLEW )
 include( GLFW )
 include( GLM )
 
-### shaders
-set( HEADER_FILES shaders.hpp simple.vert simple.frag)
+set(MY_HEADERS "headers")
 
 ### src directory
 set( MY_SOURCES "src" )
+
+include_directories(${CURRENT_DIR}/headers)
+include_directories(${CURRENT_DIR}/src)
 
 ### library name
 set( MY_LIBRARY "libV" )
 
 ### set source files
-set( SOURCE_FILES main.cpp shaders.cpp)
+set( SOURCE_FILES
+${MY_SOURCES}/main.cpp
+${MY_SOURCES}/shaders.cpp
+${MY_SOURCES}/Texture.cpp
+)
+
+set( HEADER_FILES
+${MY_HEADERS}/shaders.hpp
+${MY_HEADERS}/Texture.hpp
+${MY_HEADERS}/transform.vert
+${MY_HEADERS}/simple.frag
+${MY_HEADERS}/simple.vert
+${MY_HEADERS}/texture.frag
+)
 
 # add a shared library
-add_library( ${MY_LIBRARY} SHARED ${SOURCE_FILES} )
+add_library(${MY_LIBRARY} SHARED ${SOURCE_FILES})
 
 # generate executable file with program name
-add_executable( ${PROGRAM_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+add_executable(${PROGRAM_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
 # link our project to generated library
-target_link_libraries( ${PROGRAM_NAME} ${MY_LIBRARY} )
+target_link_libraries(${PROGRAM_NAME} ${MY_LIBRARY} -lSOIL )

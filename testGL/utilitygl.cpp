@@ -63,61 +63,48 @@ void UtilityGL::drawTriangleDemo()
   drawTraingle(v1, v2, v3);
 }
 
-void UtilityGL::drawGrid( float height, float width, float size )
+void UtilityGL::drawGrid( float height, float width, float step )
 {
-  int widthMiddle = width / size;
-  int heightMiddle = height / size;
-  int index = 0;
+    // draw horizontal lines
+    for( float i = -height; i <= height; i+=step )
+    {
+          Vertex v1 = {-width, i, 0.f, 1.f, 1.f, 1.f, 1.f};
+          Vertex v2 = {width, i, 0.f, 1.f, 1.f, 1.f, 1.f};
+          drawLine( v1, v2, 1.f );
+    }
 
-  // draw horizontal lines
-  for(float i = -height, index = 0; i < height; i+=size, index += 1)
-  {
-    if ( index == widthMiddle / 2 )
+    // draw vertical lines
+    for( float i = -width; i < width; i+=step )
     {
-      Vertex v1 = {-width, 0.f, 0.f, 0.f, 0.f, 1.f, 1.f};
-      Vertex v2 = {width, 0.f, 0.f, 0.f, 0.f, 1.f, 1.f};
-      drawLine(v1, v2, 3.f);
+        Vertex v1 = {i, -height, 0.f, 1.f, 1.f, 1.f, 1.f};
+        Vertex v2 = {i, height, 0.f, 1.f, 1.f, 1.f, 1.f};
+        drawLine( v1, v2, 1.f );
     }
-    else
-    {
-      Vertex v1 = {-width, i, 0.f, 1.f, 1.f, 1.f, 1.f};
-      Vertex v2 = {width, i, 0.f, 1.f, 1.f, 1.f, 1.f};
-      drawLine(v1, v2, 1.f);
-    }
-  }
 
-  // draw vertical lines
-  for(float i = -width, index = 0; i < width; i+=size, index += 1)
-  {
-    if( index == heightMiddle / 2 )
-    {
-      Vertex v1 = {0.f, -height, 0.f, 0.f, 1.f, 0.f, 1.f};
-      Vertex v2 = {0.f, height, 0.f, 0.f, 1.f, 0.f, 1.f};
-      drawLine(v1, v2, 3.f);
-    }
-    else
-    {
-      Vertex v1 = {i, -height, 0.f, 1.f, 1.f, 1.f, 1.f};
-      Vertex v2 = {i, height, 0.f, 1.f, 1.f, 1.f, 1.f};
-      drawLine(v1, v2, 1.f);
-    }
-  }
+    // draw x-y axis's
+    Vertex v1 = {-5.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.7f};
+    Vertex v2 = {5.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.7f};
+    Vertex v3 = {0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.7f};
+    Vertex v4 = {0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.7f};
 
+    drawLine(v1, v2, 3.f);
+    drawLine(v3, v4, 3.f);
 }
 
-void UtilityGL::draw2DScatterPlot(const Data *data, int numPoints)
+
+void UtilityGL::draw2DScatterPlot(const Voxel *data, int numPoints)
 {
     for( int i = 0; i < numPoints; i++ )
     {
         GLfloat x = data[i].x;
         GLfloat y = data[i].y;
 
-        Vertex v = {x, y, 0.f, 0.f, 0.f, 1.f, 1.0f};
+        Vertex v = {x, y, 0.f, 0.f, 1.0f, 1.0f, 0.5f};
         drawPoint(v, 8.f, true);
     }
 }
 
-void UtilityGL::drawLineBetweenPoints(const Data *data, int numPoints)
+void UtilityGL::drawLineBetweenPoints(const Voxel *data, int numPoints)
 {
     for( int i = 0; i < numPoints-1; i++ )
     {
@@ -126,8 +113,8 @@ void UtilityGL::drawLineBetweenPoints(const Data *data, int numPoints)
         GLfloat x2 = data[i + 1].x;
         GLfloat y2 = data[i + 1].y;
 
-        Vertex v1 = {x1, y1, 0.f, 0.f, 0.9f, 0.0f, 1.f};
-        Vertex v2 = {x2, y2, 0.f, 0.f, 0.9f, 0.0f, 1.f};
+        Vertex v1 = {x1, y1, 0.f, 0.f, 1.0f, 1.0f, 0.5f};
+        Vertex v2 = {x2, y2, 0.f, 0.f, 1.0f, 1.0f, 0.5f};
 
         drawLine(v1, v2, 3.f);
     }
@@ -135,19 +122,19 @@ void UtilityGL::drawLineBetweenPoints(const Data *data, int numPoints)
 
 void UtilityGL::drawSinDemo( float phaseShift )
 {
-    drawGrid(5.0f, 1.0f, 0.1f);
+    drawGrid(5.f, 1.f, 0.1f);
     GLfloat range = 10.0f;
     const int num_points = 200;
-    float amp = 0.8f;
+    float amp = 0.5f;
 
-    Data *data=(Data*)malloc(sizeof(Data)*num_points);
+    Voxel *data=(Voxel*)malloc(sizeof(Voxel)*num_points);
     for(int i=0; i<num_points; i++)
     {
         data[i].x = (((GLfloat)i / num_points) * range )-(range / 2.0f);
         data[i].y = amp * cosf( data[i].x * 3.14f + phaseShift );
     }
 
-    drawLineBetweenPoints(data, num_points);
-    draw2DScatterPlot(data, num_points);
+    drawLineBetweenPoints( data, num_points );
+    draw2DScatterPlot( data, num_points );
     free(data);
 }

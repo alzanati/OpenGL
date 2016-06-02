@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <SOIL/SOIL.h>
 #include "shaders.hpp"
 
 float timed = 0.f;
@@ -23,7 +24,6 @@ int main(int argc, char** argv)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
 
     GLFWwindow* window =  glfwCreateWindow(680, 480, "", NULL, NULL);
     if(!window)
@@ -60,12 +60,14 @@ int main(int argc, char** argv)
     GLuint sVertex_buffer;
     GLuint sColor_buffer;
     GLuint feedBack_buffer;
+    GLuint texture_buffer;
 
     glGenBuffers(1, &vertex_buffer);
     glGenBuffers(1, &color_buffer);
     glGenBuffers(1, &sVertex_buffer);
     glGenBuffers(1, &sColor_buffer);
     glGenBuffers(1, &feedBack_buffer);
+    glGenTextures(1, &texture_buffer);
 
     GLuint vertex_array[2];
     glGenVertexArrays(2, vertex_array);
@@ -98,6 +100,32 @@ int main(int argc, char** argv)
         1.0f, 0.4f, 1.0f
     };
 
+    /* textures */
+    float vertices[] = {
+    //  Position      Color             Texcoords
+        -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // Top-left
+         0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // Top-right
+         0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // Bottom-right
+        -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f  // Bottom-left
+    };
+
+    glBindTexture(GL_TEXTURE_2D, texture_buffer);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    float color[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    int width, height;
+    char* path = "/home/mohamed/workspace/OpenGl/startV/seg3.png";
+    unsigned char* image = SOIL_load_image(path, &width, &height,
+                                           0, SOIL_LOAD_RGB);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
+                 GL_UNSIGNED_BYTE, image);
+    SOIL_free_image_data(image);
+
     /* bind to VAO */
     /* so you can bind all vertexs to one vao then use it in any location */
     glBindVertexArray(vertex_array[0]);
@@ -120,7 +148,7 @@ int main(int argc, char** argv)
     glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
     glVertexAttribPointer(color_attrib, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-    //tbo /* glEnable(GL_RASTERIZER_DISCARD); disable rendering off context */
+    //tbo /* glEnable(GL_RASTERIZER_DISCARD); disable rendering */
     glBindBuffer(GL_ARRAY_BUFFER, feedBack_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), NULL, GL_STATIC_READ);
     glBindVertexArray(0);
@@ -168,24 +196,27 @@ int main(int argc, char** argv)
     /* unbind to this vertex array */
     glEnable(GL_DEPTH_TEST);
 
-    /* start rendering in off context to just done opertions in shader in gpu*/
-    // Clear the screen to black
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    /* start rendering */
+    while(!glfwWindowShouldClose(window))
+    {
+        // Clear the screen to black
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glBeginTransformFeedback(GL_TRIANGLES);
-        glBindVertexArray(vertex_array[0]);
-        glDrawArrays(GL_TRIANGLES, 0, 4);
+        glBeginTransformFeedback(GL_TRIANGLES);
+            glBindVertexArray(vertex_array[0]);
+            glDrawArrays(GL_TRIANGLES, 0, 4);
+            glBindVertexArray(0);
+        glEndTransformFeedback();
+
+        glBindVertexArray(vertex_array[1]);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
         glBindVertexArray(0);
-    glEndTransformFeedback();
 
-    glBindVertexArray(vertex_array[1]);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-    glBindVertexArray(0);
-
-    glfwSwapBuffers(window);
-    glfwPollEvents();
-    glFlush();
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+        glFlush();
+    }
 
     // dispaly data
     float* data = (float*) malloc(sizeof(vertices));

@@ -16,7 +16,7 @@ typedef struct
 typedef struct
 {
     GLfloat x, y, z;
-} Data;
+} Voxel;
 
 class UtilityGL
 {
@@ -35,11 +35,11 @@ public:
 
     void drawTriangleDemo();
 
-    void drawGrid( float height, float width, float size );
+    void drawGrid(float height, float width, float step );
 
-    void draw2DScatterPlot( const Data* data, int numPoints );
+    void draw2DScatterPlot( const Voxel* data, int numPoints );
 
-    void drawLineBetweenPoints( const Data* data, int numPoints );
+    void drawLineBetweenPoints( const Voxel* data, int numPoints );
 
     void drawSinDemo( float phaseShift );
 };
