@@ -6,33 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <SOIL/SOIL.h>
-#include "shaders.hpp"
-
-// Shader sources
-const GLchar* vertexSource =
-    "#version 150 core\n"
-    "in vec2 position;"
-    "in vec3 color;"
-    "in vec2 texcoord;"
-    "out vec3 Color;"
-    "out vec2 Texcoord;"
-    "void main()"
-    "{"
-    "    Color = color;"
-    "    Texcoord = texcoord;"
-    "    gl_Position = vec4(position, 0.0, 1.0);"
-    "}";
-const GLchar* fragmentSource =
-    "#version 150 core\n"
-    "in vec3 Color;"
-    "in vec2 Texcoord;"
-    "out vec4 outColor;"
-    "uniform sampler2D texKitten;"
-    "uniform sampler2D texPuppy;"
-    "void main()"
-    "{"
-    "    outColor = mix(texture(texKitten, Texcoord), texture(texPuppy, Texcoord), 0.5);"
-    "}";
+#include <shaders.hpp>
 
 float timed = 0.f;
 
@@ -72,112 +46,146 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    // Create Vertex Array Object
-    GLuint vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-
-    // Create a Vertex Buffer Object and copy the vertex data to it
-    GLuint vbo;
-    glGenBuffers(1, &vbo);
-
-    GLfloat vertices[] = {
-    //  Position      Color             Texcoords
-        -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // Top-left
-         0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // Top-right
-         0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // Bottom-right
-        -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f  // Bottom-left
+    float square_vertices[] =
+    {
+        -0.5f, 0.5f,
+        0.5f, 0.5f,
+        0.5f, -0.5f,
+        -0.5f, -0.5f
     };
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    float sColor[] =
+    {
+        1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f
+    };
+
+    float tex_coord[]
+    {
+        0.f, 0.f,
+        1.f, 0.f,
+        1.f, 1.f,
+        0.f, 1.f
+    };
+
+    float triangle_vertices[] =
+    {
+        -1.f, 0.f,
+        -0.0f, 0.f,
+        -1.f, 1.f
+    };
+
+    float tColor[] =
+    {
+        1.f, 0.f, 0.f,
+        0.f, 1.f, 0.f,
+        0.f, 0.f, 1.f
+    };
+
+    GLuint program = LoadShaders("/home/prof/workspace/OpenGL/startV/headers/transform.vert",
+                                 "/home/prof/workspace/OpenGL/startV/headers/texture.frag");
+
+    const char* varying[] = {"v_position"};
+    glTransformFeedbackVaryings(program, 1, varying, GL_INTERLEAVED_ATTRIBS);
+    glLinkProgram(program);
+    glUseProgram(program);
+
+    GLuint vao[2];
+    glGenVertexArrays(2, vao);
+
+    GLuint square_buffer;
+    GLuint triangle_buffer;
+    GLuint square_color;
+    GLuint triangle_color;
+    GLuint feedBack_buffer;
+    GLuint texture_coord;
+
+    glBindVertexArray(vao[0]);
 
     // Create an element array
     GLuint ebo;
     glGenBuffers(1, &ebo);
-
-    GLuint elements[] = {
-        0, 1, 2,
-        2, 3, 0
+    GLuint elements[] =
+    {
+        0, 1, 2, 3
     };
-
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
 
-    // Create and compile the vertex shader
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexSource, NULL);
-    glCompileShader(vertexShader);
+    glGenBuffers(1, &square_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, square_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(square_vertices), square_vertices, GL_STATIC_DRAW);
 
-    // Create and compile the fragment shader
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
-    glCompileShader(fragmentShader);
+    glGenBuffers(1, &square_color);
+    glBindBuffer(GL_ARRAY_BUFFER, square_color);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(sColor), sColor, GL_STATIC_DRAW);
 
-    // Link the vertex and fragment shader into a shader program
-    GLuint shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
+    glGenBuffers(1, &texture_coord);
+    glBindBuffer(GL_ARRAY_BUFFER, texture_coord);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(tex_coord), tex_coord, GL_STATIC_DRAW);
 
-    glLinkProgram(shaderProgram);
-    glUseProgram(shaderProgram);
+    GLuint position_attrib = glGetAttribLocation(program, "position");
+    glEnableVertexAttribArray(position_attrib);
+    glBindBuffer(GL_ARRAY_BUFFER, square_buffer);
+    glVertexAttribPointer(position_attrib, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-    // Specify the layout of the vertex data
-    GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
-    glEnableVertexAttribArray(posAttrib);
-    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), 0);
+    GLuint color_attrib = glGetAttribLocation(program, "color");
+    glEnableVertexAttribArray(color_attrib);
+    glBindBuffer(GL_ARRAY_BUFFER, square_color);
+    glVertexAttribPointer(color_attrib, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-    GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
-    glEnableVertexAttribArray(colAttrib);
-    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
+    GLuint tex_attrib = glGetAttribLocation(program, "texcoord");
+    glEnableVertexAttribArray(tex_attrib);
+    glBindBuffer(GL_ARRAY_BUFFER, texture_coord);
+    glVertexAttribPointer(tex_attrib, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-    GLint texAttrib = glGetAttribLocation(shaderProgram, "texcoord");
-    glEnableVertexAttribArray(texAttrib);
-    glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void*)(5 * sizeof(GLfloat)));
-
-    // Load textures
-    GLuint textures;
-    glGenTextures(1, &textures);
+    // texture
+    GLuint texture;
+    glGenTextures(1, &texture);
 
     int width, height;
     unsigned char* image;
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, textures);
-        image = SOIL_load_image("/home/prof/workspace/OpenGL/startV/seg3.png",
-                                &width, &height, 0, SOIL_LOAD_RGB);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-        SOIL_free_image_data(image);
-    glUniform1i(glGetUniformLocation(shaderProgram, "texKitten"), 0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    image = SOIL_load_image("/home/prof/workspace/OpenGL/startV/camera.png",
+                            &width, &height, 0, SOIL_LOAD_RGB );
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
+                  GL_UNSIGNED_BYTE, image );
+    SOIL_free_image_data(image);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    GLuint tex_location = glGetUniformLocation(program, "tex");
+    glUniform1i(tex_location, 0);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    glBindBuffer(GL_ARRAY_BUFFER, feedBack_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(square_vertices), NULL, GL_STATIC_READ);
 
     // start rendering
     while(!glfwWindowShouldClose(window))
     {
         // Clear the screen to black
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Draw a rectangle from the 2 triangles using 6 indices
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
         glFlush();
     }
 
-    glDeleteProgram(shaderProgram);
-    glDeleteShader(fragmentShader);
-    glDeleteShader(vertexShader);
-
-    glDeleteBuffers(1, &ebo);
-    glDeleteBuffers(1, &vbo);
-
-    glDeleteVertexArrays(1, &vao);
+    glDeleteProgram(program);
+    glDeleteTextures(1, &texture);
+    glDeleteBuffers(1, &square_buffer);
+    glDeleteBuffers(1, &square_color);
 
     // Close OpenGL window and terminate GLFW
     glfwDestroyWindow(window);

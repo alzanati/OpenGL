@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <SOIL/SOIL.h>
-#include "shaders.hpp"
+#include <shaders.hpp>
 
 // Shader sources
 const GLchar* vertexSource =
@@ -28,11 +28,11 @@ const GLchar* fragmentSource =
     "in vec3 Color;"
     "in vec2 Texcoord;"
     "out vec4 outColor;"
-    "uniform sampler2D texKitten;"
-    "uniform sampler2D texPuppy;"
+    "uniform sampler2D tex;"
+
     "void main()"
     "{"
-    "    outColor = mix(texture(texKitten, Texcoord), texture(texPuppy, Texcoord), 0.5);"
+    "    outColor = texture(tex, Texcoord) * vec4(Color, 1.0);"
     "}";
 
 float timed = 0.f;
@@ -97,7 +97,8 @@ int main(int argc, char** argv)
     GLuint ebo;
     glGenBuffers(1, &ebo);
 
-    GLuint elements[] = {
+    GLuint elements[] =
+    {
         0, 1, 2,
         2, 3, 0
     };
@@ -130,11 +131,13 @@ int main(int argc, char** argv)
 
     GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
     glEnableVertexAttribArray(colAttrib);
-    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
+    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat),
+                          (void*)(2 * sizeof(GLfloat)));
 
     GLint texAttrib = glGetAttribLocation(shaderProgram, "texcoord");
     glEnableVertexAttribArray(texAttrib);
-    glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void*)(5 * sizeof(GLfloat)));
+    glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat),
+                          (void*)(5 * sizeof(GLfloat)));
 
     // Load textures
     GLuint textures;
@@ -147,9 +150,10 @@ int main(int argc, char** argv)
     glBindTexture(GL_TEXTURE_2D, textures);
         image = SOIL_load_image("/home/prof/workspace/OpenGL/startV/seg3.png",
                                 &width, &height, 0, SOIL_LOAD_RGB);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
+                     GL_UNSIGNED_BYTE, image);
         SOIL_free_image_data(image);
-    glUniform1i(glGetUniformLocation(shaderProgram, "texKitten"), 0);
+    glUniform1i(glGetUniformLocation(shaderProgram, "tex"), 0);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
