@@ -46,6 +46,10 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    GLuint vao[2];
+    glGenVertexArrays(2, vao);
+    glBindVertexArray(vao[0]);
+
     float square_vertices[] =
     {
         -0.5f, 0.5f,
@@ -83,6 +87,7 @@ int main(int argc, char** argv)
         0.f, 0.f, 1.f
     };
 
+
     GLuint program = LoadShaders("/home/prof/workspace/OpenGL/startV/headers/transform.vert",
                                  "/home/prof/workspace/OpenGL/startV/headers/texture.frag");
 
@@ -91,17 +96,12 @@ int main(int argc, char** argv)
     glLinkProgram(program);
     glUseProgram(program);
 
-    GLuint vao[2];
-    glGenVertexArrays(2, vao);
-
     GLuint square_buffer;
-    GLuint triangle_buffer;
     GLuint square_color;
+    GLuint texture_coord;
+    GLuint triangle_buffer;
     GLuint triangle_color;
     GLuint feedBack_buffer;
-    GLuint texture_coord;
-
-    glBindVertexArray(vao[0]);
 
     // Create an element array
     GLuint ebo;
@@ -140,6 +140,13 @@ int main(int argc, char** argv)
     glBindBuffer(GL_ARRAY_BUFFER, texture_coord);
     glVertexAttribPointer(tex_attrib, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
+    // transformations
+    GLuint trans = glGetUniformLocation(program, "rotate");
+    glm::mat4 rotate;
+    float angle = 0.f;
+    rotate = glm::rotate(rotate, glm::degrees(angle), glm::vec3(0.f, 0.f, 1.f));
+    glUniformMatrix4fv(trans, 1, GL_FALSE, glm::value_ptr(rotate));
+
     // texture
     GLuint texture;
     glGenTextures(1, &texture);
@@ -164,8 +171,13 @@ int main(int argc, char** argv)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glGenerateMipmap(GL_TEXTURE_2D);
 
+    //feedback
+    glGenBuffers(1, &feedBack_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, feedBack_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(square_vertices), NULL, GL_STATIC_READ);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(tex_coord), NULL, GL_STATIC_READ);
+
+    glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, tex_location, feedBack_buffer);
+    glBindVertexArray(0);
 
     // start rendering
     while(!glfwWindowShouldClose(window))
@@ -174,13 +186,25 @@ int main(int argc, char** argv)
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Draw a rectangle from the 2 triangles using 6 indices
-        glDrawElements(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 0);
+        rotate = glm::rotate(rotate, glm::degrees(angle), glm::vec3(0.f, 0.f, 1.f));
+        glUniformMatrix4fv(trans, 1, GL_FALSE, glm::value_ptr(rotate));
+
+        glBeginTransformFeedback(GL_TRIANGLE_FAN);
+            glBindVertexArray(vao[0]);
+            glDrawElements(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 0);
+            glBindVertexArray(0);
+        glEndTransformFeedback();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
         glFlush();
+        angle += 0.000001f;
     }
+
+    float* data = (float*) malloc(sizeof(tex_coord));
+    glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, sizeof(tex_coord), data);
+    for(int i = 0; i < sizeof(tex_coord) / sizeof(float); i++)
+        std::cout << data[i] << std::endl;
 
     glDeleteProgram(program);
     glDeleteTextures(1, &texture);

@@ -160,6 +160,10 @@ int main(int argc, char** argv)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+//        rotate = glm::rotate(rotate, glm::degrees(angle), glm::vec3(0.0f, 0.0f, 1.0f));
+//        GLuint uniTrans = glGetUniformLocation(program, "rotate");
+//        glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(rotate));
+
     // start rendering
     while(!glfwWindowShouldClose(window))
     {
