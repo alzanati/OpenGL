@@ -14,6 +14,6 @@ void main()
 {
     Color = color;
     Texcoord = texcoord;
-    v_position = Texcoord;
+    v_position = texcoord;
     gl_Position = rotate * vec4(position, 0.f, 1.f);
 }

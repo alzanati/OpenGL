@@ -10,5 +10,5 @@ out vec4 outColor;
 
 void main()
 {
-    outColor = texture2D(tex, Texcoord) * vec4(Color, 1.0);
+    outColor = texture2D(tex, Texcoord) * vec4(Color, 1.0).rgba;
 }

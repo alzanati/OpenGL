@@ -46,10 +46,6 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    GLuint vao[2];
-    glGenVertexArrays(2, vao);
-    glBindVertexArray(vao[0]);
-
     float square_vertices[] =
     {
         -0.5f, 0.5f,
@@ -60,6 +56,7 @@ int main(int argc, char** argv)
 
     float sColor[] =
     {
+        1.f, 1.f, 1.f,
         1.f, 1.f, 1.f,
         1.f, 1.f, 1.f,
         1.f, 1.f, 1.f
@@ -102,6 +99,10 @@ int main(int argc, char** argv)
     GLuint triangle_buffer;
     GLuint triangle_color;
     GLuint feedBack_buffer;
+
+    GLuint vao[2];
+    glGenVertexArrays(2, vao);
+    glBindVertexArray(vao[0]);
 
     // Create an element array
     GLuint ebo;
@@ -168,7 +169,7 @@ int main(int argc, char** argv)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     //feedback
@@ -176,7 +177,7 @@ int main(int argc, char** argv)
     glBindBuffer(GL_ARRAY_BUFFER, feedBack_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(tex_coord), NULL, GL_STATIC_READ);
 
-    glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, tex_location, feedBack_buffer);
+    glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, feedBack_buffer);
     glBindVertexArray(0);
 
     // start rendering
@@ -186,19 +187,18 @@ int main(int argc, char** argv)
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        rotate = glm::rotate(rotate, glm::degrees(angle), glm::vec3(0.f, 0.f, 1.f));
+        rotate = glm::rotate(rotate, glm::degrees(0.f), glm::vec3(1.f, 0.f, 1.f));
         glUniformMatrix4fv(trans, 1, GL_FALSE, glm::value_ptr(rotate));
 
-        glBeginTransformFeedback(GL_TRIANGLE_FAN);
+        glBeginTransformFeedback(GL_TRIANGLES);
             glBindVertexArray(vao[0]);
-            glDrawElements(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 0);
+            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
             glBindVertexArray(0);
         glEndTransformFeedback();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
         glFlush();
-        angle += 0.000001f;
     }
 
     float* data = (float*) malloc(sizeof(tex_coord));
