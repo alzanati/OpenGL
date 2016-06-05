@@ -73,6 +73,13 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    // transformations
+    GLuint trans = glGetUniformLocation(program, "rotate");
+    glm::mat4 rotate;
+    float angle = 0.f;
+    rotate = glm::rotate(rotate, glm::degrees(angle), glm::vec3(0.f, 0.f, 1.f));
+    glUniformMatrix4fv(trans, 1, GL_FALSE, glm::value_ptr(rotate));
+
     // Create Vertex Array Object
     GLuint vao;
     glGenVertexArrays(1, &vao);

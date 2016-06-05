@@ -74,83 +74,73 @@ int main(int argc, char** argv)
     {
         -1.f, 0.f,
         -0.0f, 0.f,
-        -1.f, 1.f
+        -1.f, 1.f,
     };
 
     float tColor[] =
     {
-        1.f, 0.f, 0.f,
-        0.f, 1.f, 0.f,
-        0.f, 0.f, 1.f
+        1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f,
+        1.f, 1.f, 1.f
     };
 
 
     GLuint program = LoadShaders("/home/prof/workspace/OpenGL/startV/headers/transform.vert",
                                  "/home/prof/workspace/OpenGL/startV/headers/texture.frag");
 
-    const char* varying[] = {"v_position"};
-    glTransformFeedbackVaryings(program, 1, varying, GL_INTERLEAVED_ATTRIBS);
     glLinkProgram(program);
     glUseProgram(program);
 
-    GLuint square_buffer;
-    GLuint square_color;
+    GLuint vertex_buffer;
+    GLuint color_buffer;
     GLuint texture_coord;
-    GLuint triangle_buffer;
-    GLuint triangle_color;
-    GLuint feedBack_buffer;
+
+    GLuint tVertex_buffer;
+    GLuint tColor_buffer;
+
+    glGenBuffers(1, &vertex_buffer);
+    glGenBuffers(1, &color_buffer);
+    glGenBuffers(1, &tVertex_buffer);
+    glGenBuffers(1, &tColor_buffer);
+    glGenBuffers(1, &texture_coord);
 
     GLuint vao[2];
     glGenVertexArrays(2, vao);
+
+    //square
     glBindVertexArray(vao[0]);
+        glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(square_vertices),
+                     square_vertices, GL_STATIC_DRAW);
 
-    // Create an element array
-    GLuint ebo;
-    glGenBuffers(1, &ebo);
-    GLuint elements[] =
-    {
-        0, 1, 2, 3
-    };
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(sColor), sColor, GL_STATIC_DRAW);
 
-    glGenBuffers(1, &square_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, square_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(square_vertices), square_vertices, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, texture_coord);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(tex_coord), tex_coord, GL_STATIC_DRAW);
 
-    glGenBuffers(1, &square_color);
-    glBindBuffer(GL_ARRAY_BUFFER, square_color);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(sColor), sColor, GL_STATIC_DRAW);
+        GLuint position_attrib = glGetAttribLocation(program, "position");
+        glEnableVertexAttribArray(position_attrib);
+        glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+        glVertexAttribPointer(position_attrib, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-    glGenBuffers(1, &texture_coord);
-    glBindBuffer(GL_ARRAY_BUFFER, texture_coord);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(tex_coord), tex_coord, GL_STATIC_DRAW);
+        GLuint color_attrib = glGetAttribLocation(program, "color");
+        glEnableVertexAttribArray(color_attrib);
+        glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
+        glVertexAttribPointer(color_attrib, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-    GLuint position_attrib = glGetAttribLocation(program, "position");
-    glEnableVertexAttribArray(position_attrib);
-    glBindBuffer(GL_ARRAY_BUFFER, square_buffer);
-    glVertexAttribPointer(position_attrib, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-    GLuint color_attrib = glGetAttribLocation(program, "color");
-    glEnableVertexAttribArray(color_attrib);
-    glBindBuffer(GL_ARRAY_BUFFER, square_color);
-    glVertexAttribPointer(color_attrib, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-    GLuint tex_attrib = glGetAttribLocation(program, "texcoord");
-    glEnableVertexAttribArray(tex_attrib);
-    glBindBuffer(GL_ARRAY_BUFFER, texture_coord);
-    glVertexAttribPointer(tex_attrib, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-    // transformations
-    GLuint trans = glGetUniformLocation(program, "rotate");
-    glm::mat4 rotate;
-    float angle = 0.f;
-    rotate = glm::rotate(rotate, glm::degrees(angle), glm::vec3(0.f, 0.f, 1.f));
-    glUniformMatrix4fv(trans, 1, GL_FALSE, glm::value_ptr(rotate));
+        GLuint tex_attrib = glGetAttribLocation(program, "texcoord");
+        glEnableVertexAttribArray(tex_attrib);
+        glBindBuffer(GL_ARRAY_BUFFER, texture_coord);
+        glVertexAttribPointer(tex_attrib, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glBindVertexArray(0);
 
     // texture
     GLuint texture;
     glGenTextures(1, &texture);
+
+    GLuint texture1;
+    glGenTextures(1, &texture1);
 
     int width, height;
     unsigned char* image;
@@ -163,8 +153,21 @@ int main(int argc, char** argv)
                   GL_UNSIGNED_BYTE, image );
     SOIL_free_image_data(image);
 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glGenerateMipmap(GL_TEXTURE_2D);
     GLuint tex_location = glGetUniformLocation(program, "tex");
     glUniform1i(tex_location, 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture1);
+    image = SOIL_load_image("/home/prof/workspace/OpenGL/startV/seg3.png",
+                            &width, &height, 0, SOIL_LOAD_RGB );
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
+                  GL_UNSIGNED_BYTE, image );
+    SOIL_free_image_data(image);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
@@ -172,12 +175,25 @@ int main(int argc, char** argv)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    //feedback
-    glGenBuffers(1, &feedBack_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, feedBack_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(tex_coord), NULL, GL_STATIC_READ);
+    GLuint tex_location1 = glGetUniformLocation(program, "tex1");
+    glUniform1i(tex_location1, 1);
 
-    glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, feedBack_buffer);
+    //triangle
+    glBindVertexArray(vao[1]);
+        glBindBuffer(GL_ARRAY_BUFFER, tVertex_buffer);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(triangle_vertices),
+                     triangle_vertices, GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ARRAY_BUFFER, tColor_buffer);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(tColor), tColor, GL_STATIC_DRAW);
+
+        glEnableVertexAttribArray(position_attrib);
+        glBindBuffer(GL_ARRAY_BUFFER, tVertex_buffer);
+        glVertexAttribPointer(position_attrib, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+        glEnableVertexAttribArray(color_attrib);
+        glBindBuffer(GL_ARRAY_BUFFER, tColor_buffer);
+        glVertexAttribPointer(color_attrib, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glBindVertexArray(0);
 
     // start rendering
@@ -187,29 +203,25 @@ int main(int argc, char** argv)
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        rotate = glm::rotate(rotate, glm::degrees(0.f), glm::vec3(1.f, 0.f, 1.f));
-        glUniformMatrix4fv(trans, 1, GL_FALSE, glm::value_ptr(rotate));
-
-        glBeginTransformFeedback(GL_TRIANGLES);
-            glBindVertexArray(vao[0]);
+        glBindVertexArray(vao[0]);
+            glUniform1i(glGetUniformLocation(program, "state"), 0);
             glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-            glBindVertexArray(0);
-        glEndTransformFeedback();
+        glBindVertexArray(0);
+
+        glBindVertexArray(vao[1]);
+            glUniform1i(glGetUniformLocation(program, "state"), 1);
+            glDrawArrays(GL_TRIANGLE_FAN, 0, 3);
+        glBindVertexArray(0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
         glFlush();
     }
 
-    float* data = (float*) malloc(sizeof(tex_coord));
-    glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, sizeof(tex_coord), data);
-    for(int i = 0; i < sizeof(tex_coord) / sizeof(float); i++)
-        std::cout << data[i] << std::endl;
-
     glDeleteProgram(program);
     glDeleteTextures(1, &texture);
-    glDeleteBuffers(1, &square_buffer);
-    glDeleteBuffers(1, &square_color);
+    glDeleteBuffers(1, &vertex_buffer);
+    glDeleteBuffers(1, &color_buffer);
 
     // Close OpenGL window and terminate GLFW
     glfwDestroyWindow(window);
