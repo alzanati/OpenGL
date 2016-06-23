@@ -197,19 +197,22 @@ void display()
     glEnable(GL_BLEND);
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
+    glScalef( 0.5f, 0.5f, 0.5f);
     glMatrixMode( GL_TEXTURE );
     glLoadIdentity();
 
     // Translate and make 0.5f as the center
     // (texture co ordinate is from 0 to 1.so center of rotation has to be 0.5f)
-    //glScalef(1.5f, 1.5f, 1.5f);
+
     glTranslatef( 0.5f, 0.5f, 0.5f );
-    glRotated( 90, 0, 1, 0 );
-    glRotated( angle, 1, 0, 0 );
-    glRotated( -90, 0, 0, 1 );
+    glRotatef( 90, 0, 1, 0 );
+    glRotatef( angle, 1, 0, 0 );
+    glRotatef( -90, 0, 0, 1 );
     glTranslatef( -0.5f,-0.5f, -0.5f );
 
     glEnable(GL_TEXTURE_3D);
+//    glEnable(GL_TEXTURE_GEN_S);
+//    glEnable(GL_TEXTURE_GEN_T);
     glBindTexture( GL_TEXTURE_3D,  mu3DTex );
 
     for ( float fIndx = -1.0f; fIndx <= 1.0f; fIndx+=0.01f )
@@ -218,6 +221,11 @@ void display()
             MAP_3DTEXT( fIndx );
         glEnd();
      }
+
+    glBegin(GL_QUADS);
+        MAP_3DTEXT( 0.07 );
+    glEnd();
+
     glutSwapBuffers();
     angle += 0.3f;
 }
