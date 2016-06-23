@@ -64,12 +64,12 @@ void reshape( const int t_width, const int t_height )
     glLoadIdentity();
 }
 
-bool initTextures()
+bool initTextures( char const* volumePath )
 {
     m_puTextureIDs = new GLuint[ m_uImageCount ];
     FILE *file;
 
-    file = fopen("/home/prof/volumeRendering/skull.raw", "rb");
+    file = fopen( volumePath, "rb");
     if (file == NULL)
         return EXIT_FAILURE;
 
@@ -170,7 +170,7 @@ int main( int argc, char** argv )
     glutReshapeFunc( reshape );
 
     initGL();
-    initTextures();
+    initTextures( "/home/prof/volumeRendering/skull.raw" );
     glutDisplayFunc( display );
     glutMainLoop();
 
