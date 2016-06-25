@@ -14,8 +14,7 @@
 GLfloat dOrthoSize = 1.0f;
 GLfloat dViewPortSize = 1.0f;
 
-GLuint* m_puTextureIDs;
-GLuint mu3DTex, mDiaplayList, mVolTexureID;
+GLuint mu3DTex, mDiaplayList, mVolTexureID, Slice, framebuffer;
 
 int m_volumeDepth = 256;
 int m_volumeWidth = 256;
@@ -131,8 +130,51 @@ void Timer(int value)
   glutTimerFunc(15, Timer, 0);
 }
 
+void CHECK_FRAMEBUFFER_STATUS()
+{  
+  GLenum status;
+  status = glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT); 
+  switch(status) 
+  {
+    case GL_FRAMEBUFFER_COMPLETE:
+        printf("%s\n", "frame buffer is created successfully");
+        break;
+
+    case GL_FRAMEBUFFER_UNSUPPORTED:
+        printf("%s\n", "frame buffer is not supported try different formate!!!");
+        break;
+
+    default:
+      /* programming error; will fail on all hardware */
+      fputs("Framebuffer Error\n", stderr);
+      exit(-1);
+  }                                                     
+}
+
+void initFBO()
+{
+  glGenTextures(1, &Slice);
+  glBindTexture(GL_TEXTURE_2D, Slice);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, m_volumeWidth, m_volumeHeight, 
+                0, GL_BGRA, GL_UNSIGNED_BYTE, NULL ); // data is null to fill it with frame buffer data
+
+  glGenFramebuffers(1, &framebuffer);
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, framebuffer);
+  glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Slice, 0);
+
+  CHECK_FRAMEBUFFER_STATUS();
+}
+
 void display()
 {
+    /* bind our framebuffer to update texture with slice data */
+    glBindFramebuffer(GL_FRAMEBUFFER_EXT, framebuffer);
+
+    /* start rendering to this framebuffer */
     glClear( GL_COLOR_BUFFER_BIT  | GL_DEPTH_BUFFER_BIT );
 
     /* enable 3d texture */
@@ -156,7 +198,7 @@ void display()
     glPushMatrix();
 
         /*around with 270 get z normal slice, around x with 90 get y normal slice*/
-        glRotatef(270, 1.f, 0.f, 0.f); 
+        glRotatef(0, 1.f, 0.f, 0.f); 
         glTranslatef(-0.5, -0.5, -0.5); // translate 0.5 to get center at 0
 
         /* this will generate textures in eye coordinates which help us in projection */
@@ -184,10 +226,10 @@ void display()
     glEnable(GL_CLIP_PLANE3);
     glEnable(GL_CLIP_PLANE4);
     glEnable(GL_CLIP_PLANE5);
-
     /* now we have extracted slice :) with remove carbage */
 
-    /* draw extracted slice to ensure correct algorithm */
+    /* draw extracted slice to ensure correct algorithm 
+       but the already saved in framebuffer color buffer */
     glBegin( GL_QUADS );
         glVertex3f(-dViewPortSize,-dViewPortSize, 0);
         glVertex3f(dViewPortSize,-dViewPortSize, 0);
@@ -195,10 +237,32 @@ void display()
         glVertex3f(-dViewPortSize,dViewPortSize, 0);
     glEnd();
     
+    /* back to default framebuffer to render extracted slice */
+    glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
+    glClearColor(0.1f, 0.1f, 0.1f, 0.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    /* bind our texture that represent slice */
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, Slice);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glTranslatef(-0.5, -0.5, 0.0);
+
+    /* mapping texture coordinates to see if slice is correct or not */
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0, 0.0); glVertex2f(0.0, 0.0);
+        glTexCoord2f(1.0, 0.0); glVertex2f(1.0, 0.0);
+        glTexCoord2f(1.0, 1.0); glVertex2f(1.0, 1.0);
+        glTexCoord2f(0.0, 1.0); glVertex2f(0.0, 1.0);
+    glEnd();
+
     /* swap buffers to get update buffer to render seen */
     glutSwapBuffers();
 
-    /* Disable texturing */  
+    /* Disable texturing */ 
+    glDisable(GL_TEXTURE_2D); 
     glDisable(GL_TEXTURE_3D);
     glDisable(GL_TEXTURE_GEN_S);
     glDisable(GL_TEXTURE_GEN_T);
@@ -221,8 +285,15 @@ void unitTest( int argc, char** argv )
     glutCreateWindow( "Yalla Render" );
     glutReshapeFunc( reshape );
     glutTimerFunc(0, Timer, 0);
+
+    glewInit();
+    printf("ARB FBO: %i\n",glewIsSupported("GL_ARB_framebuffer_object"));
+    printf("EXT FBO: %i\n",glewIsSupported("GL_EXT_framebuffer_object"));
+    
     initGL();
     initTextures3D( "/home/prof/volumeRendering/foot.raw" );
+    initFBO();
+
     glutDisplayFunc( display );
     glutMainLoop();
 }
