@@ -145,6 +145,18 @@ void display()
   GLfloat yPlane[] = { 0.0f, 1.0f, 0.0f, 0.0f };
   GLfloat zPlane[] = { 0.0f, 0.0f, 1.0f, 0.0f };
 
+  GLuint mDiaplayList;
+  mDiaplayList = glGenLists(1);
+
+  glNewList(mDiaplayList, GL_COMPILE);
+  glBegin(GL_QUADS);
+    glVertex2f(0.0f, 0.0f);
+    glVertex2f(1.0f, 0.0f);
+    glVertex2f(1.0f, 1.0f);
+    glVertex2f(0.0f, 1.0f);
+  glEnd();
+  glEndList();
+
   glEnable( GL_TEXTURE_2D );
   GLuint texture = soil_texture_load("/home/prof/workspace/OpenGL/seg3.png");
 
@@ -152,7 +164,6 @@ void display()
   // glPushMatrix();
   //   glLoadIdentity();
   //   gluOrtho2D(0.0f, 1.0f, 0.0f, 1.0f);
-
   //   glMatrixMode(GL_MODELVIEW);
     
   //   glDisable(GL_TEXTURE_GEN_S);
@@ -189,13 +200,8 @@ void display()
     glTranslatef(0.0f, 0.0f, -1.0f);
     glTexGenfv(GL_S, GL_EYE_PLANE, xPlane);
     glTexGenfv(GL_T, GL_EYE_PLANE, yPlane);
-
-    glBegin(GL_QUADS);
-      glVertex2f(0.0f, 0.0f);
-      glVertex2f(1.0f, 0.0f);
-      glVertex2f(1.0f, 1.0f);
-      glVertex2f(0.0f, 1.0f);
-    glEnd();
+    
+    glCallList(mDiaplayList);
   glPopMatrix();
 
   
