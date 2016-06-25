@@ -135,67 +135,88 @@ void keyboard(int key, int x, int y)
       yRotation -= 0.1;
       break;
   }
-
 }
 
 void display()
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
+
+  GLfloat xPlane[] = { 1.0f, 0.0f, 0.0f, 0.0f };
+  GLfloat yPlane[] = { 0.0f, 1.0f, 0.0f, 0.0f };
+  GLfloat zPlane[] = { 0.0f, 0.0f, 1.0f, 0.0f };
 
   glEnable( GL_TEXTURE_2D );
-  // camera transformations
-  gluLookAt(2.f, 2.0f, 4.5f,
-            xRotation, yRotation, 0.f,
-            0.f ,1.f, 0.f);
+  GLuint texture = soil_texture_load("/home/prof/workspace/OpenGL/seg3.png");
 
-  // GLuint texture = raw_texture_load( "skull.raw", 256, 256 );
+  // glMatrixMode(GL_PROJECTION);
+  // glPushMatrix();
+  //   glLoadIdentity();
+  //   gluOrtho2D(0.0f, 1.0f, 0.0f, 1.0f);
 
-  // draw axies
-  glBegin(GL_LINES);
-    // x-axis
-    glColor3f(1.f, 0.f, 0.f);
-    glVertex3f(-50.f, 0.f, 0.f);
-    glVertex3f(50.f, 0.f, 0.f);
-    // y-axis
-    glColor3f(0.f, 1.f, 0.f);
-    glVertex3f(0.f, -50.f, 0.f);
-    glVertex3f(0.f, 50.f, 0.f);
-    // z-axis
-    glColor3f(0.f, 0.f, 1.f);
-    glVertex3f(0.f, 0.f, 50.f);
-    glVertex3f(0.f, 0.f, -50.f);
-  glEnd();
+  //   glMatrixMode(GL_MODELVIEW);
+    
+  //   glDisable(GL_TEXTURE_GEN_S);
+  //   glDisable(GL_TEXTURE_GEN_T);
+    
+  //   glBegin(GL_QUADS);
+  //     glTexCoord2f(0.0f, 0.0f);
+  //     glVertex2f(0.0f, 0.0f);
 
+  //     glTexCoord2f(1.0f, 0.0f);
+  //     glVertex2f(1.0f, 0.0f);
+
+  //     glTexCoord2f(1.0f, 1.0f);
+  //     glVertex2f(1.0f, 1.0f);
+
+  //     glTexCoord2f(0.0f, 1.0f);
+  //     glVertex2f(0.0f, 1.0f);
+  //   glEnd();
+  //   glMatrixMode(GL_PROJECTION);
+  // glPopMatrix();
+
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  gluOrtho2D(0.0f, 1.0f, 0.0f, 1.0f);
+  glMatrixMode(GL_MODELVIEW);
+
+  // Turn texgen
+  glEnable(GL_TEXTURE_GEN_S);
+  glEnable(GL_TEXTURE_GEN_T);
+
+    // Save the matrix state and do the rotations
   glPushMatrix();
-  glRotatef( angleCube, 0.f, 0.f, 1.f );
+    glTranslatef(0.0f, 0.0f, -1.0f);
+    glTexGenfv(GL_S, GL_EYE_PLANE, xPlane);
+    glTexGenfv(GL_T, GL_EYE_PLANE, yPlane);
 
-  glBegin(GL_QUADS);
-    glColor3f(1.f, 1.f, 1.f);
-    glVertex2d(-1.f, -1.f);
-    glVertex2d(+1.f, -1.f);
-    glVertex2d(+1.f, +1.f);
-    glVertex2d(-1.f, +1.f);
-  glEnd();
-
+    glBegin(GL_QUADS);
+      glVertex2f(0.0f, 0.0f);
+      glVertex2f(1.0f, 0.0f);
+      glVertex2f(1.0f, 1.0f);
+      glVertex2f(0.0f, 1.0f);
+    glEnd();
   glPopMatrix();
 
-  GLuint texture = soil_texture_load("seg3.png");
-  glBindTexture( GL_TEXTURE_2D, texture );
+  
+  // glBindTexture( GL_TEXTURE_2D, texture );
 
-  //GLuint texture1 = soil_texture_load("cameraman1.png");
-  //glBindTexture( GL_TEXTURE_2D, texture1 );
+  // glColor3f(1.f, 1.f, 1.f);
+  // glTexCoord2d(0.f, 0.f);
+  // glVertex2d(-1.f, -1.f);
+  // glTexCoord2d(1.f, 0.f);
+  // glVertex2d(+1.f, -1.f);
+  // glTexCoord2d(1.f, 1.f);
+  // glVertex2d(+1.f, +1.f);
+  // glTexCoord2d(0.f, 1.f);
+  // glVertex2d(-1.f, +1.f);
 
+  /*
   glBegin(GL_QUADS);
     glColor3f(0.0f, 1.0f, 0.0f);     // Green
-    glTexCoord2d(0.f, 0.f);
     glVertex3f( 1.0f, 1.0f, -1.0f);
-    glTexCoord2d(1.f, 0.f);
     glVertex3f(-1.0f, 1.0f, -1.0f);
-    glTexCoord2d(1.f, 1.f);
     glVertex3f(-1.0f, 1.0f,  1.0f);
-    glTexCoord2d(0.f, 1.f);
+    
     glVertex3f( 1.0f, 1.0f,  1.0f);
 
     // Bottom face (y = -1.0f)
@@ -237,6 +258,7 @@ void display()
     glVertex3f(1.0f, -1.0f,  1.0f);
     glVertex3f(1.0f, -1.0f, -1.0f);
   glEnd();
+  */
 
   angleCube += 0.2;
   glutSwapBuffers();
@@ -245,7 +267,7 @@ void display()
 int main(int argc, char** argv)
 {
   glutInit(&argc, argv);
-  glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE );
+  glutInitDisplayMode( GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE );
   glutInitWindowPosition(50, 50);
   glutInitWindowSize(WIDTH, HEIGHT);
   glutCreateWindow(argv[1]);
