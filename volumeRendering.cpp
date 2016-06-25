@@ -384,7 +384,7 @@ void display()
     glLoadIdentity();
 
     glPushMatrix();
-        glRotatef(90, 0.0, 1.0, 0.0);
+        glRotatef(90, 1.0, 0.0, 0.0);
         glTranslatef(-0.5, -0.5, -0.5);
         glTexGenfv(GL_S, GL_EYE_PLANE, xPlane);
         glTexGenfv(GL_T, GL_EYE_PLANE, yPlane);
@@ -397,7 +397,7 @@ void display()
         glVertex3f(dViewPortSize,dViewPortSize, 0);
         glVertex3f(-dViewPortSize,dViewPortSize, 0);
     glEnd();
-
+    angle+= 0.1;
     glutSwapBuffers();
 }
 
