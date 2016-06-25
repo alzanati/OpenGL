@@ -21,6 +21,19 @@ int m_volumeDepth = 256;
 int m_volumeWidth = 256;
 int m_volumeHeight = 256;
 
+/* plane equations */
+GLdouble rightPlaneX[4] = { 1.0, 0.0, 0.0, 0.0};
+GLdouble leftPlaneX [4] = {-1.0, 0.0, 0.0, 1.0};
+GLdouble rightPlaneY[4] = {0.0,  1.0, 0.0, 0.0};
+GLdouble leftPlaneY [4] = {0.0, -1.0, 0.0, 1.0};
+GLdouble rightPlaneZ[4] = {0.0, 0.0,  1.0, 0.0};
+GLdouble leftPlaneZ [4] = {0.0, 0.0, -1.0, 1.0};
+
+/* texture coordinates */
+GLfloat xCoord[] = { 1.f, 0.f, 0.f, 0.f };
+GLfloat yCoord[] = { 0.f, 1.f, 0.f, 0.f };
+GLfloat zCoord[] = { 0.f, 0.f, 1.f, 0.f };
+
 bool initGL()
 {
     /* clear colors then enabling depth test */
@@ -101,9 +114,8 @@ bool initTextures3D( char const* volumePath )
     }
 
     /* store data to bounded 3d texture */
-    glTexImage3D( GL_TEXTURE_3D, 0, GL_RGBA,
-                  m_volumeWidth, m_volumeHeight, m_volumeDepth, 0,
-                  GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid *) chRGBABuffer );
+    glTexImage3D( GL_TEXTURE_3D, 0, GL_RGBA, m_volumeWidth, m_volumeHeight, 
+                  m_volumeDepth, 0, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid *) chRGBABuffer );
 
     glBindTexture( GL_TEXTURE_3D, 0 );
 
@@ -122,19 +134,6 @@ void Timer(int value)
 void display()
 {
     glClear( GL_COLOR_BUFFER_BIT  | GL_DEPTH_BUFFER_BIT );
-
-    /* plane equations */
-    static GLdouble rightPlaneX[4] = { 1.0, 0.0, 0.0, 0.0};
-    static GLdouble leftPlaneX [4] = {-1.0, 0.0, 0.0, 1.0};
-    static GLdouble rightPlaneY[4] = {0.0,  1.0, 0.0, 0.0};
-    static GLdouble leftPlaneY [4] = {0.0, -1.0, 0.0, 1.0};
-    static GLdouble rightPlaneZ[4] = {0.0, 0.0,  1.0, 0.0};
-    static GLdouble leftPlaneZ [4] = {0.0, 0.0, -1.0, 1.0};
-
-    /* texture coordinates */
-    GLfloat xCoord[] = { 1.f, 0.f, 0.f, 0.f };
-    GLfloat yCoord[] = { 0.f, 1.f, 0.f, 0.f };
-    GLfloat zCoord[] = { 0.f, 0.f, 1.f, 0.f };
 
     /* enable 3d texture */
     glEnable( GL_TEXTURE_3D );
@@ -165,6 +164,9 @@ void display()
         glTexGenfv(GL_T, GL_EYE_PLANE, yCoord);
         glTexGenfv(GL_R, GL_EYE_PLANE, zCoord);
 
+        /* really here we have slice but with carbage data from rendering so we need to clip them
+           so clip planes are defind accodring to projection in eye plane */
+
         /* Define the main six clip planes to cut boundaries that don't belong to slice */
         glClipPlane(GL_CLIP_PLANE0, rightPlaneX);
         glClipPlane(GL_CLIP_PLANE1, leftPlaneX);
@@ -183,7 +185,7 @@ void display()
     glEnable(GL_CLIP_PLANE4);
     glEnable(GL_CLIP_PLANE5);
 
-    /* now we have extracted slice :) */
+    /* now we have extracted slice :) with remove carbage */
 
     /* draw extracted slice to ensure correct algorithm */
     glBegin( GL_QUADS );
@@ -195,6 +197,20 @@ void display()
     
     /* swap buffers to get update buffer to render seen */
     glutSwapBuffers();
+
+    /* Disable texturing */  
+    glDisable(GL_TEXTURE_3D);
+    glDisable(GL_TEXTURE_GEN_S);
+    glDisable(GL_TEXTURE_GEN_T);
+    glDisable(GL_TEXTURE_GEN_R);
+    
+    /* Unloading clip-planes */ 
+    glDisable(GL_CLIP_PLANE0);
+    glDisable(GL_CLIP_PLANE1);
+    glDisable(GL_CLIP_PLANE2);
+    glDisable(GL_CLIP_PLANE3);
+    glDisable(GL_CLIP_PLANE4);
+    glDisable(GL_CLIP_PLANE5);
 }
 
 void unitTest( int argc, char** argv )
