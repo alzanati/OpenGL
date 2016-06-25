@@ -176,9 +176,10 @@ void display()
 
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  gluOrtho2D(0.0f, 1.0f, 0.0f, 1.0f);
+  
   glMatrixMode(GL_MODELVIEW);
-
+  glLoadIdentity();
+  
   // Turn texgen
   glEnable(GL_TEXTURE_GEN_S);
   glEnable(GL_TEXTURE_GEN_T);
