@@ -28,16 +28,18 @@ float mXrot = 5.f;
 float mYrot = 5.f;
 float mZrot = 5.f;
 
+/* this macro to map 2d textures to quad ploygon */
 #define MAP_2DTEXT( TexIndex ) \
     glTexCoord2f(0.0f, 0.0f);  \
-    glVertex3f(-dOrthoSize, -dOrthoSize,(TexIndex *2*dOrthoSize/fFrameCount)-1.0f);\
+    glVertex3f(-dOrthoSize, -dOrthoSize,(TexIndex *2*dOrthoSize/m_volumeDepth)-1.0f);\
     glTexCoord2f(1.0f, 0.0f); \
-    glVertex3f(dOrthoSize, -dOrthoSize,(TexIndex *2*dOrthoSize/fFrameCount)-1.0f);\
+    glVertex3f(dOrthoSize, -dOrthoSize,(TexIndex *2*dOrthoSize/m_volumeDepth)-1.0f);\
     glTexCoord2f(1.0f, 1.0f); \
-    glVertex3f(dOrthoSize, dOrthoSize,(TexIndex *2*dOrthoSize/fFrameCount)-1.0f);\
+    glVertex3f(dOrthoSize, dOrthoSize,(TexIndex *2*dOrthoSize/m_volumeDepth)-1.0f);\
     glTexCoord2f(0.0f, 1.0f); \
-    glVertex3f(-dOrthoSize, dOrthoSize,(TexIndex *2*dOrthoSize/fFrameCount)-1.0f);
+    glVertex3f(-dOrthoSize, dOrthoSize,(TexIndex *2*dOrthoSize/m_volumeDepth)-1.0f);
 
+/* this macro to map 3d textures to quad ploygon */
 #define MAP_3DTEXT( TexIndex ) \
     glTexCoord3f(0.0f, 0.0f, ((float)TexIndex+1.0f)/2.0f);  \
     glVertex3f(-dViewPortSize,-dViewPortSize,TexIndex);\
@@ -50,11 +52,13 @@ float mZrot = 5.f;
 
 bool initGL()
 {
+    /* clear colors then enabling depth test */
     glClearColor(0.1f, 0.1f, 0.1f, 0.f);
     glEnable(GL_DEPTH_TEST);
     glClearDepth(1.f);
     glDepthFunc(GL_LEQUAL);
 
+    /* check glew cabability */
     if( glewInit() != GLEW_OK )
         std::cerr << "GLEW NOT INSTALLED" << std::endl;
 
@@ -76,7 +80,7 @@ void reshape( const int t_width, const int t_height )
     glMatrixMode( GL_PROJECTION );
     glLoadIdentity();
 
-    //Set the orthographic projection.
+    /* Set the orthographic projection. */
     if( t_width <= t_height )
     {
         glOrtho( -dOrthoSize, dOrthoSize, -( dOrthoSize / AspectRatio ) ,
@@ -148,6 +152,7 @@ bool initTextures3D( char const* volumePath )
     char *chBuffer, *chRGBABuffer;
     FILE *file;
 
+    /* create to buffers to store data from .raw file then applying blending in another buffer */
     chBuffer = new char[ m_volumeWidth * m_volumeHeight * m_volumeDepth ];
     chRGBABuffer = new char[ m_volumeWidth * m_volumeHeight * m_volumeDepth * 4 ];
 
@@ -156,6 +161,7 @@ bool initTextures3D( char const* volumePath )
         return EXIT_FAILURE;
     fread(chBuffer, m_volumeWidth * m_volumeHeight * m_volumeDepth, 1, file);
 
+    /* spaceify texture parameters */
     glGenTextures(1, &mu3DTex );
     glBindTexture( GL_TEXTURE_3D, mu3DTex );
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
@@ -173,9 +179,12 @@ bool initTextures3D( char const* volumePath )
         chRGBABuffer[nIndx*4+2] = chBuffer[nIndx];
         chRGBABuffer[nIndx*4+3] = chBuffer[nIndx];
     }
+
+    /* store data to bounded 3d texture */
     glTexImage3D( GL_TEXTURE_3D, 0, GL_RGBA,
                   m_volumeWidth, m_volumeHeight, m_volumeDepth, 0,
                   GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid *) chRGBABuffer );
+
     glBindTexture( GL_TEXTURE_3D, 0 );
 
     fclose(file);
@@ -190,66 +199,55 @@ void Timer(int value)
   glutTimerFunc(15, Timer, 0);
 }
 
-void keyboard(int key, int x, int y)
-{
-  switch (key)
-  {
-    case GLUT_KEY_LEFT:
-      angle -= 0.1;
-      break;
-    case GLUT_KEY_RIGHT:
-      angle += 0.1;
-      break;
-    case GLUT_KEY_UP:
-      mXrot += 0.1;
-      break;
-    case GLUT_KEY_DOWN:
-      mXrot -= 0.1;
-      break;
-  }
-}
-
 void display()
 {
-    float fFrameCount = m_volumeDepth;
     glClear( GL_COLOR_BUFFER_BIT  | GL_DEPTH_BUFFER_BIT );
 
+    /* texture coordinates */
     GLfloat xPlane[] = { 1.f, 0.0f, 0.0f, 0.0f };
     GLfloat yPlane[] = { 0.0f, 1.0f, 0.0f, 0.0f };
     GLfloat zPlane[] = { 0.0f, 0.0f, 1.0f, 0.0f };
 
+    /* enable 3d texture */
     glEnable( GL_TEXTURE_3D );
     glBindTexture( GL_TEXTURE_3D,  mu3DTex );
 
+    /* enable automatic texture generation */
     glEnable(GL_TEXTURE_GEN_S);
     glEnable(GL_TEXTURE_GEN_T);
     glEnable(GL_TEXTURE_GEN_R);
 
+    /* load projection matrix to convert from 3d to 2d screen */
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     
+    /* load projection matrix to map to word coordinates and do transformations */
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
+    /* save state and perform transformation on texture to put it in (0, 0)*/
     glPushMatrix();
         glRotatef(90, 1.0, 0.0, 0.0);
         glTranslatef(-0.5, -0.5, -0.5);
-        glTexGenfv(GL_S, GL_EYE_PLANE, xPlane);
+
+        /* this will generate textures in eye coordinates which help us in projection */
+        glTexGenfv(GL_S, GL_EYE_PLANE, xPlane); 
         glTexGenfv(GL_T, GL_EYE_PLANE, yPlane);
         glTexGenfv(GL_R, GL_EYE_PLANE, zPlane);
     glPopMatrix();
 
+    /* draw extracted slice */
     glBegin( GL_QUADS );
         glVertex3f(-dViewPortSize,-dViewPortSize, 0);
         glVertex3f(dViewPortSize,-dViewPortSize, 0);
         glVertex3f(dViewPortSize,dViewPortSize, 0);
         glVertex3f(-dViewPortSize,dViewPortSize, 0);
     glEnd();
-    angle+= 0.1;
+    
     glutSwapBuffers();
 }
 
-int main( int argc, char** argv )
+void unitTest( int argc, char** argv )
 {
     glutInit(&argc, argv);
     glutInitWindowSize( WIDTH, HEIGHT );
@@ -260,8 +258,13 @@ int main( int argc, char** argv )
     initGL();
     initTextures3D( "/home/prof/volumeRendering/skull.raw" );
     glutDisplayFunc( display );
-    glutSpecialFunc( keyboard );
     glutMainLoop();
+}
+
+int main( int argc, char** argv )
+{
+    /* test opengl implementations */
+    unitTest(argc, argv);
 
     return EXIT_SUCCESS;
 }
