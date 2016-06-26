@@ -11,10 +11,18 @@
 #define WIDTH 680
 #define HEIGHT 480
 
+/* macro to draw slice becuase it's not changing over code */
+#define SLICE() \
+glTexCoord2f(0.0, 0.0); glVertex2f(0.0, 0.0);\
+glTexCoord2f(1.0, 0.0); glVertex2f(1.0, 0.0);\
+glTexCoord2f(1.0, 1.0); glVertex2f(1.0, 1.0);\
+glTexCoord2f(0.0, 1.0); glVertex2f(0.0, 1.0);
+
+
 GLfloat dOrthoSize = 1.0f;
 GLfloat dViewPortSize = 1.0f;
 
-GLuint mu3DTex, mDiaplayList, mVolTexureID, Slice, framebuffer;
+GLuint mu3DTex, sliceList, mVolTexureID, Slice, framebuffer;
 
 int m_volumeDepth = 256;
 int m_volumeWidth = 256;
@@ -246,16 +254,14 @@ void display()
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, Slice);
 
+    /* neccassry transformations to see extracted slice */
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glTranslatef(-0.5, -0.5, 0.0);
 
     /* mapping texture coordinates to see if slice is correct or not */
     glBegin(GL_QUADS);
-        glTexCoord2f(0.0, 0.0); glVertex2f(0.0, 0.0);
-        glTexCoord2f(1.0, 0.0); glVertex2f(1.0, 0.0);
-        glTexCoord2f(1.0, 1.0); glVertex2f(1.0, 1.0);
-        glTexCoord2f(0.0, 1.0); glVertex2f(0.0, 1.0);
+        SLICE()
     glEnd();
 
     /* swap buffers to get update buffer to render seen */
