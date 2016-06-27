@@ -141,7 +141,7 @@ void display()
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  GLfloat xPlane[] = { 1.0f, 0.0f, 0.0f, 0.0f };
+  GLfloat xPlane[] = { 1.f, 0.0f, 0.0f, 0.0f };
   GLfloat yPlane[] = { 0.0f, 1.0f, 0.0f, 0.0f };
   GLfloat zPlane[] = { 0.0f, 0.0f, 1.0f, 0.0f };
 
@@ -150,10 +150,10 @@ void display()
 
   glNewList(mDiaplayList, GL_COMPILE);
   glBegin(GL_QUADS);
-    glVertex2f(0.0f, 0.0f);
-    glVertex2f(1.0f, 0.0f);
-    glVertex2f(1.0f, 1.0f);
-    glVertex2f(0.0f, 1.0f);
+    glVertex3f(-0.5f, -0.5f, 0.f);
+    glVertex3f(0.5f, -0.5f, 0.f);
+    glVertex3f(0.5f, 0.5f, 0.f);
+    glVertex3f(-0.5f, 0.5f, 0.f);
   glEnd();
   glEndList();
 
@@ -172,7 +172,7 @@ void display()
 
   // Save the matrix state and do the rotations
   glPushMatrix();
-    glTranslatef(0.0f, 0.0f, -1.0f);
+    glRotatef(-50, 0.0, 0.0, 1.0);
     glTexGenfv(GL_S, GL_EYE_PLANE, xPlane);
     glTexGenfv(GL_T, GL_EYE_PLANE, yPlane);
     

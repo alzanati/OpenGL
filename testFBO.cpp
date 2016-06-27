@@ -14,7 +14,7 @@
 #define HEIGHT 480
 
 int m_width = 300;
-int m_height = 320;
+int m_height = 300;
 
 float angleCube = 0.f;
 float xRotation = 0.f;
@@ -102,40 +102,32 @@ void initFBO()
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fb);
   glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color, 0);
 
-  glGenRenderbuffers(1, &depth);
-  glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, depth);
-  glRenderbufferStorage(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT24, m_width, m_height);
-
-  glFramebufferRenderbuffer(GL_RENDERBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_FRAMEBUFFER_EXT, depth);
-
   CHECK_FRAMEBUFFER_STATUS();
 }
 
 void display()
 {
-  gluLookAt( 2.5f, 2.5f, 2.5f,
-             xRotation, yRotation, 0.f,
-             0.f ,1.f, 0.f);
-
+  // attach our framebuffer
   glBindFramebuffer(GL_FRAMEBUFFER_EXT, fb);
 
   glViewport(0, 0, m_width, m_height);
   glClearColor(0 , 0, 0, 0);
   glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
-
   glDisable(GL_TEXTURE_2D);
   glDisable(GL_BLEND);
   glEnable(GL_DEPTH_TEST);
 
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+
   glPushMatrix();
     glColor3f(0.4f, 1.0f, 0.0f);
-    glScalef(0.5f, 0.5f, 1.5f);
+    glTranslatef(-0.5, -0.5, -5);
     glutWireSphere(0.8, 20, 20);
   glPopMatrix();
 
+  // attach default frame buffer
   glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
   glClearColor(0.1f, 0.1f, 0.1f, 0.f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -143,6 +135,10 @@ void display()
 
   glEnable(GL_TEXTURE_2D);
   glBindTexture(GL_TEXTURE_2D, color);
+
+  glMatrixMode( GL_MODELVIEW );
+  glLoadIdentity();
+  glTranslatef(-0.1, -0.1, -2.0);
 
   glBegin(GL_QUADS);
     glTexCoord2f(0.0, 0.0); glVertex3f(0.0, 0.0, 0.0);

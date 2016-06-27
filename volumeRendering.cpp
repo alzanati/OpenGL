@@ -89,12 +89,11 @@ void reshape( const int t_width, const int t_height )
 
 bool initTextures3D( char const* volumePath )
 {
-    char *chBuffer, *chRGBABuffer;
+    char *chBuffer;
     FILE *file;
 
     /* create to buffers to store data from .raw file then applying blending in another buffer */
     chBuffer = new char[ m_volumeWidth * m_volumeHeight * m_volumeDepth ];
-    chRGBABuffer = new char[ m_volumeWidth * m_volumeHeight * m_volumeDepth * 4 ];
 
     file = fopen(volumePath, "rb");
     if (file == NULL)
@@ -111,18 +110,11 @@ bool initTextures3D( char const* volumePath )
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-    int size = m_volumeDepth * m_volumeHeight * m_volumeWidth;
-    for( int nIndx = 0; nIndx < size; ++nIndx )
-    {
-        chRGBABuffer[nIndx*4] = chBuffer[nIndx];
-        chRGBABuffer[nIndx*4+1] = chBuffer[nIndx];
-        chRGBABuffer[nIndx*4+2] = chBuffer[nIndx];
-        chRGBABuffer[nIndx*4+3] = chBuffer[nIndx];
-    }
 
+    int size = m_volumeDepth * m_volumeHeight * m_volumeWidth;
     /* store data to bounded 3d texture */
-    glTexImage3D( GL_TEXTURE_3D, 0, GL_RGBA, m_volumeWidth, m_volumeHeight, 
-                  m_volumeDepth, 0, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid *) chRGBABuffer );
+    glTexImage3D( GL_TEXTURE_3D, 0, GL_LUMINANCE, m_volumeWidth, m_volumeHeight, 
+                  m_volumeDepth, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid *) chBuffer );
 
     glBindTexture( GL_TEXTURE_3D, 0 );
 
