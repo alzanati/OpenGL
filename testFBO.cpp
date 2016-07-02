@@ -114,15 +114,14 @@ void renderScene(void)
 	/* will read at every time a pixel stored in 4 channels, so 4 unsigned char will mapped represent it */
 	/* so complete from read pixels 256 * 256 * 4 * sizeof(unsigned char) */
 
-	// unsigned char* ptr = (unsigned char*) malloc(sizeof(unsigned char) * m_WIDTH * m_HIEGHT * 4);
+	// size_t channels = 4;
+	// unsigned char* ptr = (unsigned char*) malloc(sizeof(unsigned char) * m_WIDTH * m_HIEGHT * channels);
 	// glReadPixels(0, 0, m_WIDTH, m_WIDTH, GL_BGRA, GL_UNSIGNED_BYTE, ptr);
-	// for(int i = 0; i < 256 * 256 * 4; i++)
+	// for(int i = 0; i < 256 * 256 * channels; i++)
 	// 	std::cout << (int)ptr[i] << std::endl;
 
 	glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, pbo[0]);
 	glReadPixels(0, 0, m_WIDTH, m_HIEGHT, GL_BGRA, GL_UNSIGNED_BYTE, BUFFER_OFFSET(0));
-
-	glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, pbo[0]);
 	unsigned char* ptr = (unsigned char*)glMapBufferARB(GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY);
 	if(ptr)
 	{
@@ -143,7 +142,8 @@ int main(int argc, char **argv)
 	glutCreateWindow("Lighthouse3D - GLUT Tutorial");
 	glutDisplayFunc(renderScene);
 	glutReshapeFunc(changeSize);
-	
+	glutHideWindow();
+
 	glewInit();
   	printf("ARB FBO: %i\n",glewIsSupported("GL_ARB_framebuffer_object"));
   	printf("EXT FBO: %i\n",glewIsSupported("GL_EXT_framebuffer_object"));

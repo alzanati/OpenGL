@@ -11,6 +11,8 @@
 #define WIDTH 680
 #define HEIGHT 480
 
+#define BUFFER_OFFSET(i) ((char *)NULL + (i))
+
 /* macro to draw slice becuase it's not changing over code */
 #define SLICE() \
 glTexCoord2f(0.0, 0.0); glVertex2f(0.0, 0.0);\
@@ -22,7 +24,8 @@ glTexCoord2f(0.0, 1.0); glVertex2f(0.0, 1.0);
 GLfloat dOrthoSize = 1.0f;
 GLfloat dViewPortSize = 1.0f;
 
-GLuint mu3DTex, sliceList, mVolTexureID, Slice, framebuffer;
+GLuint mu3DTex, sliceList, mVolTexureID, Slice, framebuffer, depth_rb;
+GLuint pbo[2];
 
 int m_volumeDepth = 256;
 int m_volumeWidth = 256;
@@ -87,6 +90,27 @@ void reshape( const int t_width, const int t_height )
     glLoadIdentity();
 }
 
+void CHECK_FRAMEBUFFER_STATUS()
+{  
+  GLenum status;
+  status = glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT); 
+  switch(status) 
+  {
+    case GL_FRAMEBUFFER_COMPLETE:
+        printf("%s\n", "frame buffer is created successfully");
+        break;
+
+    case GL_FRAMEBUFFER_UNSUPPORTED:
+        printf("%s\n", "frame buffer is not supported try different formate!!!");
+        break;
+
+    default:
+      /* programming error; will fail on all hardware */
+      fputs("Framebuffer Error\n", stderr);
+      exit(-1);
+  }                                                     
+}
+
 bool initTextures3D( char const* volumePath )
 {
     char *chBuffer;
@@ -120,51 +144,29 @@ bool initTextures3D( char const* volumePath )
 
     fclose(file);
     delete[] chBuffer;
-    delete[] chRGBABuffer;
     return true;
-}
-
-void Timer(int value)
-{
-  glutPostRedisplay();
-  glutTimerFunc(15, Timer, 0);
-}
-
-void CHECK_FRAMEBUFFER_STATUS()
-{  
-  GLenum status;
-  status = glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT); 
-  switch(status) 
-  {
-    case GL_FRAMEBUFFER_COMPLETE:
-        printf("%s\n", "frame buffer is created successfully");
-        break;
-
-    case GL_FRAMEBUFFER_UNSUPPORTED:
-        printf("%s\n", "frame buffer is not supported try different formate!!!");
-        break;
-
-    default:
-      /* programming error; will fail on all hardware */
-      fputs("Framebuffer Error\n", stderr);
-      exit(-1);
-  }                                                     
 }
 
 void initFBO()
 {
   glGenTextures(1, &Slice);
-  glBindTexture(GL_TEXTURE_2D, Slice);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, m_volumeWidth, m_volumeHeight, 
-                0, GL_BGRA, GL_UNSIGNED_BYTE, NULL ); // data is null to fill it with frame buffer data
+  glBindTexture( GL_TEXTURE_2D, Slice );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_LUMINANCE, m_volumeWidth, m_volumeHeight, 
+                0, GL_LUMINANCE, GL_UNSIGNED_BYTE, NULL ); // data is null to fill it with frame buffer data
 
-  glGenFramebuffers(1, &framebuffer);
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, framebuffer);
-  glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Slice, 0);
+  glGenFramebuffersEXT( 1, &framebuffer );
+  glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, framebuffer );
+  glFramebufferTexture2D( GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, 
+                          GL_TEXTURE_2D, Slice, 0 );
+
+  glGenRenderbuffersEXT(1, &depth_rb);
+  glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, depth_rb);
+  glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT24, m_volumeHeight, m_volumeWidth);
+  glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, depth_rb);
 
   CHECK_FRAMEBUFFER_STATUS();
 }
@@ -172,10 +174,14 @@ void initFBO()
 void display()
 {
     /* bind our framebuffer to update texture with slice data */
-    glBindFramebuffer(GL_FRAMEBUFFER_EXT, framebuffer);
+    glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, framebuffer );
 
     /* start rendering to this framebuffer */
     glClear( GL_COLOR_BUFFER_BIT  | GL_DEPTH_BUFFER_BIT );
+    glViewport(-128, -128, 512, 512);
+
+    glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, pbo[0]);
+    glBufferData(GL_PIXEL_PACK_BUFFER_ARB, m_volumeWidth * m_volumeHeight, NULL, GL_STREAM_READ);
 
     /* enable 3d texture */
     glEnable( GL_TEXTURE_3D );
@@ -236,20 +242,37 @@ void display()
         glVertex3f(dViewPortSize,dViewPortSize, 0);
         glVertex3f(-dViewPortSize,dViewPortSize, 0);
     glEnd();
-    
+
+    freopen("output.txt","w",stdout);
+    // size_t size = sizeof(unsigned char) * m_volumeHeight * m_volumeWidth;
+    // unsigned char* ptr = (unsigned char*) malloc( size );
+    // glReadPixels(0, 0, m_volumeHeight, m_volumeWidth, GL_LUMINANCE, GL_UNSIGNED_BYTE, ptr);
+    // for(int i = 0; i < 256 * 256; i++)
+    //     std::cout << (int)ptr[i] << std::endl;
+
+    glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, pbo[0]);
+    glReadPixels(0, 0, m_volumeWidth, m_volumeHeight, GL_LUMINANCE, GL_UNSIGNED_BYTE, BUFFER_OFFSET(0));
+    unsigned char* ptr = (unsigned char*)glMapBufferARB(GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY);
+    if(ptr)
+    {
+        for(int i = 0; i < 256 * 256; i++)
+        std::cout << (int)ptr[i] << std::endl;
+    }
+
     /* back to default framebuffer to render extracted slice */
-    glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
-    glClearColor(0.1f, 0.1f, 0.1f, 0.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 );
+    glClearColor( 0.1f, 0.1f, 0.1f, 0.f );
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    glViewport(-WIDTH/2, -HEIGHT/2, 2*WIDTH, 2*HEIGHT);
 
     /* bind our texture that represent slice */
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, Slice);
+    glEnable( GL_TEXTURE_2D );
+    glBindTexture( GL_TEXTURE_2D, Slice );
 
     /* neccassry transformations to see extracted slice */
-    glMatrixMode(GL_MODELVIEW);
+    glMatrixMode( GL_MODELVIEW );
     glLoadIdentity();
-    glTranslatef(-0.5, -0.5, 0.0);
+    glTranslatef( -0.5, -0.5, 0.0 );
 
     /* mapping texture coordinates to see if slice is correct or not */
     glBegin(GL_QUADS);
@@ -275,6 +298,11 @@ void display()
     glDisable(GL_CLIP_PLANE5);
 }
 
+void initPBO()
+{
+    glGenBuffers(2, pbo);
+}
+
 void unitTest( int argc, char** argv )
 {
     glutInit(&argc, argv);
@@ -282,14 +310,14 @@ void unitTest( int argc, char** argv )
     glutInitDisplayMode( GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE );
     glutCreateWindow( "Yalla Render" );
     glutReshapeFunc( reshape );
-    glutTimerFunc(0, Timer, 0);
 
     glewInit();
     printf("ARB FBO: %i\n",glewIsSupported("GL_ARB_framebuffer_object"));
     printf("EXT FBO: %i\n",glewIsSupported("GL_EXT_framebuffer_object"));
     
     initGL();
-    initTextures3D( "/home/prof/volumeRendering/foot.raw" );
+    initTextures3D( "/home/mohamed/workspace/OpenGL/foot.raw" );
+    initPBO();
     initFBO();
 
     glutDisplayFunc( display );
