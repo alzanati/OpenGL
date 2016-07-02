@@ -178,6 +178,8 @@ void display()
 
     /* start rendering to this framebuffer */
     glClear( GL_COLOR_BUFFER_BIT  | GL_DEPTH_BUFFER_BIT );
+    /* adujst the view to put data from index (0, 0) to width and height */
+    /* so when read back we can read from (0, 0) to width and height of volume*/
     glViewport(-128, -128, 512, 512);
 
     glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, pbo[0]);
